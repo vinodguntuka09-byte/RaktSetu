@@ -1,10 +1,22 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
+import socket from "./socket";
+import "./index.css";
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
+import { generateToken } from "./getToken";
+
+console.log("MAIN FILE RUNNING");
+
+generateToken();
+
+socket.on("connect", () => {
+  console.log("🟢 Connected to Socket.IO:", socket.id);
+});
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <BrowserRouter>
     <App />
-  </StrictMode>,
-)
+  </BrowserRouter>
+);

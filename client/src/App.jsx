@@ -1,21 +1,35 @@
-import { useEffect, useState } from "react";
+import { Routes, Route } from "react-router-dom";
 
-function App() {
-  const [message, setMessage] = useState("Loading...");
+import LandingPage from "./pages/LandingPage";
+import HospitalLogin from "./pages/HospitalLogin";
+import HospitalDashboard from "./pages/HospitalDashboard";
+import DonorRegister from "./pages/DonorRegister";
+import DonorDashboard from "./pages/DonorDashboard";
 
-  useEffect(() => {
-    fetch("http://localhost:5000")
-      .then((res) => res.json())
-      .then((data) => setMessage(data.message))
-      .catch(() => setMessage("Failed to connect to backend"));
-  }, []);
-
+export default function App() {
   return (
-    <div style={{ padding: "40px", fontFamily: "Arial" }}>
-      <h1>RaktSetu</h1>
-      <h2>{message}</h2>
-    </div>
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+
+      <Route
+        path="/hospital-login"
+        element={<HospitalLogin />}
+      />
+
+      <Route
+        path="/dashboard"
+        element={<HospitalDashboard />}
+      />
+
+      <Route
+        path="/donor-register"
+        element={<DonorRegister />}
+      />
+
+      <Route
+        path="/donor-dashboard"
+        element={<DonorDashboard />}
+      />
+    </Routes>
   );
 }
-
-export default App;
