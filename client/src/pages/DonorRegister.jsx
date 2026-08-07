@@ -34,7 +34,7 @@ export default function DonorRegister() {
     try {
       if (isLogin) {
         const res = await axios.post(
-          "http://localhost:5000/api/donors/login",
+          "https://raktsetu-d1bz.onrender.com/api/donors/login",
           {
             email: formData.email,
             password: formData.password,
@@ -60,7 +60,7 @@ export default function DonorRegister() {
     };
 
     await axios.post(
-      "http://localhost:5000/api/donors/register",
+      "https://raktsetu-d1bz.onrender.com/api/donors/register",
       updatedData
     );
 

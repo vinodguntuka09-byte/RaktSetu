@@ -34,7 +34,7 @@ const loadEligibleDonors = async (requestId) => {
 
   try {
     const res = await axios.get(
-      `http://localhost:5000/api/requests/eligible/${requestId}`
+      `https://raktsetu-d1bz.onrender.com/api/requests/eligible/${requestId}`
     );
 
       //alert(JSON.stringify(res.data.donors));
@@ -53,7 +53,7 @@ const loadEligibleDonors = async (requestId) => {
 const completeRequest = async (requestId) => {
   try {
     await axios.put(
-      "http://localhost:5000/api/requests/complete",
+      "https://raktsetu-d1bz.onrender.com/api/requests/complete",
       {
         requestId,
       }
@@ -80,7 +80,7 @@ const completeRequest = async (requestId) => {
   const loadRequests = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/requests/all"
+        "https://raktsetu-d1bz.onrender.com/api/requests/all"
       );
 
       setRequests(res.data);
@@ -104,7 +104,7 @@ const completeRequest = async (requestId) => {
 
     try {
       await axios.post(
-        "http://localhost:5000/api/requests/create",
+        "https://raktsetu-d1bz.onrender.com/api/requests/create",
         {
           hospital: hospital._id,
           ...formData,

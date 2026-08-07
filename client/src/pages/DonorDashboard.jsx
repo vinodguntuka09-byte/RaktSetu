@@ -37,7 +37,7 @@ export default function DonorDashboard() {
   const loadRequests = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/requests/all"
+        "https://raktsetu-d1bz.onrender.com/api/requests/all"
       );
 
       const filtered = res.data.filter(
@@ -55,7 +55,7 @@ export default function DonorDashboard() {
   const acceptDonation = async (requestId) => {
     try {
       await axios.put(
-        "http://localhost:5000/api/requests/accept",
+        "https://raktsetu-d1bz.onrender.com/api/requests/accept",
         {
           requestId,
           donorName: donor.name,

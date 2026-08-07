@@ -58,7 +58,7 @@ export default function HospitalLogin() {
 
       if (isLogin) {
         const res = await axios.post(
-          "http://localhost:5000/api/hospitals/login",
+          "https://raktsetu-d1bz.onrender.com/api/hospitals/login",
           {
             email: formData.email,
             password: formData.password,
@@ -77,7 +77,7 @@ export default function HospitalLogin() {
         navigate("/dashboard");
       } else {
         await axios.post(
-          "http://localhost:5000/api/hospitals/register",
+          "https://raktsetu-d1bz.onrender.com/api/hospitals/register",
           formData
         );
 
