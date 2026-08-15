@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 
 export default function HospitalLogin() {
   const navigate = useNavigate();
 
   const [isLogin, setIsLogin] = useState(true);
-
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -30,7 +29,7 @@ export default function HospitalLogin() {
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported.");
+      alert("Geolocation is not supported by your browser.");
       return;
     }
 
@@ -44,8 +43,9 @@ export default function HospitalLogin() {
 
         alert("Location Captured Successfully ✅");
       },
-      () => {
-        alert("Unable to fetch location.");
+      (err) => {
+        console.warn("Geolocation error:", err);
+        alert("Unable to fetch location automatically. You can enter Latitude and Longitude manually below if needed.");
       }
     );
   };
@@ -57,32 +57,26 @@ export default function HospitalLogin() {
       setLoading(true);
 
       if (isLogin) {
-        const res = await axios.post(
-          "https://raktsetu-d1bz.onrender.com/api/hospitals/login",
-          {
-            email: formData.email,
-            password: formData.password,
-          }
-        );
+        const res = await api.post("/api/hospitals/login", {
+          email: formData.email,
+          password: formData.password,
+        });
 
         localStorage.setItem("token", res.data.token);
-
-        localStorage.setItem(
-          "hospital",
-          JSON.stringify(res.data.hospital)
-        );
+        localStorage.setItem("hospital", JSON.stringify(res.data.hospital));
 
         alert("Login Successful ✅");
-
         navigate("/dashboard");
       } else {
-        await axios.post(
-          "https://raktsetu-d1bz.onrender.com/api/hospitals/register",
-          formData
-        );
+        const payload = {
+          ...formData,
+          latitude: formData.latitude ? Number(formData.latitude) : 17.38504,
+          longitude: formData.longitude ? Number(formData.longitude) : 78.48667,
+        };
+
+        await api.post("/api/hospitals/register", payload);
 
         alert("Hospital Registered Successfully ✅");
-
         setIsLogin(true);
 
         setFormData({
@@ -98,10 +92,8 @@ export default function HospitalLogin() {
         });
       }
     } catch (err) {
-      alert(
-        err.response?.data?.message ||
-          "Something went wrong"
-      );
+      console.error(err);
+      alert(err.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -109,29 +101,23 @@ export default function HospitalLogin() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-gray-100 px-4 py-8">
-
       <form
         onSubmit={handleSubmit}
-        className="bg-white shadow-xl rounded-2xl p-12 w-[700px]"
+        className="bg-white shadow-xl rounded-2xl p-12 w-[700px] max-w-full"
       >
-
         <h1 className="text-4xl font-extrabold text-center text-red-600 mb-10">
-
-          {isLogin
-            ? "Hospital Login"
-            : "Hospital Registration"}
-
+          {isLogin ? "Hospital Login" : "Hospital Registration"}
         </h1>
 
         {!isLogin && (
           <>
-		            <input
+            <input
               type="text"
               name="hospitalName"
               placeholder="Hospital Name"
               value={formData.hospitalName}
               onChange={handleChange}
-              className="w-full border p-4 text-lg rounded-lg mb-4"
+              className="w-full border p-4 text-lg rounded-lg mb-4 outline-none focus:ring-2 focus:ring-red-500"
               required
             />
 
@@ -141,7 +127,7 @@ export default function HospitalLogin() {
               placeholder="License Number"
               value={formData.licenseNumber}
               onChange={handleChange}
-              className="w-full border p-4 text-lg rounded-lg mb-4"
+              className="w-full border p-4 text-lg rounded-lg mb-4 outline-none focus:ring-2 focus:ring-red-500"
               required
             />
 
@@ -151,7 +137,7 @@ export default function HospitalLogin() {
               placeholder="Contact Person"
               value={formData.contactPerson}
               onChange={handleChange}
-              className="w-full border p-4 text-lg rounded-lg mb-4"
+              className="w-full border p-4 text-lg rounded-lg mb-4 outline-none focus:ring-2 focus:ring-red-500"
               required
             />
 
@@ -161,7 +147,7 @@ export default function HospitalLogin() {
               placeholder="Hospital Phone"
               value={formData.phone}
               onChange={handleChange}
-              className="w-full border p-4 text-lg rounded-lg mb-4"
+              className="w-full border p-4 text-lg rounded-lg mb-4 outline-none focus:ring-2 focus:ring-red-500"
               required
             />
 
@@ -171,34 +157,44 @@ export default function HospitalLogin() {
               placeholder="Hospital Address"
               value={formData.address}
               onChange={handleChange}
-              className="w-full border p-4 text-lg rounded-lg mb-4"
+              className="w-full border p-4 text-lg rounded-lg mb-4 outline-none focus:ring-2 focus:ring-red-500"
               required
             />
 
             <button
               type="button"
               onClick={getCurrentLocation}
-              className="w-full bg-blue-600 text-white p-4 text-lg rounded-lg hover:bg-blue-700 mb-4"
+              className="w-full bg-blue-600 text-white p-4 text-lg rounded-lg hover:bg-blue-700 mb-4 transition font-semibold"
             >
               📍 Use My Current Location
             </button>
 
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <input
-                type="text"
-                value={formData.latitude}
-                readOnly
-                placeholder="Latitude"
-                className="border p-3 rounded-lg bg-gray-100"
-              />
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="text-xs text-gray-500 font-semibold mb-1 block">Latitude</label>
+                <input
+                  type="number"
+                  step="any"
+                  name="latitude"
+                  value={formData.latitude}
+                  onChange={handleChange}
+                  placeholder="e.g. 17.3850"
+                  className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
 
-              <input
-                type="text"
-                value={formData.longitude}
-                readOnly
-                placeholder="Longitude"
-                className="border p-3 rounded-lg bg-gray-100"
-              />
+              <div>
+                <label className="text-xs text-gray-500 font-semibold mb-1 block">Longitude</label>
+                <input
+                  type="number"
+                  step="any"
+                  name="longitude"
+                  value={formData.longitude}
+                  onChange={handleChange}
+                  placeholder="e.g. 78.4866"
+                  className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
           </>
         )}
@@ -209,7 +205,7 @@ export default function HospitalLogin() {
           placeholder="Hospital Email"
           value={formData.email}
           onChange={handleChange}
-          className="w-full border p-4 text-lg rounded-lg mb-4"
+          className="w-full border p-4 text-lg rounded-lg mb-4 outline-none focus:ring-2 focus:ring-red-500"
           required
         />
 
@@ -219,14 +215,14 @@ export default function HospitalLogin() {
           placeholder="Password"
           value={formData.password}
           onChange={handleChange}
-          className="w-full border p-4 text-lg rounded-lg mb-6"
+          className="w-full border p-4 text-lg rounded-lg mb-6 outline-none focus:ring-2 focus:ring-red-500"
           required
         />
-		
-		        <button
+
+        <button
           type="submit"
           disabled={loading}
-          className="w-full bg-red-600 text-white p-4 text-lg rounded-lg hover:bg-red-700 transition"
+          className="w-full bg-red-600 text-white p-4 text-lg font-bold rounded-lg hover:bg-red-700 transition"
         >
           {loading
             ? isLogin
@@ -239,15 +235,13 @@ export default function HospitalLogin() {
 
         <p
           onClick={() => setIsLogin(!isLogin)}
-          className="mt-8 text-lg text-center text-red-600 cursor-pointer hover:underline"
+          className="mt-8 text-lg text-center text-red-600 cursor-pointer hover:underline font-medium"
         >
           {isLogin
             ? "New Hospital? Register Here"
             : "Already Registered? Login"}
         </p>
-
       </form>
-
     </div>
   );
 }

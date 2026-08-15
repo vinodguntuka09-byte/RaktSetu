@@ -1,164 +1,152 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import socket from "../socket";
 import { useNavigate } from "react-router-dom";
+import api from "../api";
 
 export default function DonorDashboard() {
   const navigate = useNavigate();
-
-  const donor = JSON.parse(localStorage.getItem("donor"));
+  const donor = JSON.parse(localStorage.getItem("donor") || "null");
 
   const [requests, setRequests] = useState([]);
 
-  useEffect(() => {
-  loadRequests();
-
-  socket.on("new-request", (newRequest) => {
-
-    console.log("🔥 Socket Event Received");
-    console.log(newRequest);
-
-    if (
-      newRequest.bloodGroup === donor.bloodGroup
-    ) {
-      alert(
-        `🚨 New Blood Request!\n\nBlood Group: ${newRequest.bloodGroup}\nUnits: ${newRequest.units}\nUrgency: ${newRequest.urgency}`
-      );
-
-      loadRequests();
-    }
-  });
-
-  return () => {
-    socket.off("new-request");
-  };
-}, []);
-
   const loadRequests = async () => {
+    if (!donor) return;
     try {
-      const res = await axios.get(
-        "https://raktsetu-d1bz.onrender.com/api/requests/all"
-      );
+      const res = await api.get("/api/requests/all");
 
-      const filtered = res.data.filter(
+      const filtered = (res.data || []).filter(
         (item) =>
-          item.bloodGroup === donor.bloodGroup &&
+          item.bloodGroup?.toUpperCase() === donor.bloodGroup?.toUpperCase() &&
           item.status === "Active"
       );
 
       setRequests(filtered);
     } catch (err) {
-      console.log(err);
+      console.error("Error loading requests:", err);
     }
   };
 
+  useEffect(() => {
+    if (!donor) {
+      navigate("/donor-register");
+      return;
+    }
+
+    loadRequests();
+
+    socket.on("new-request", (newRequest) => {
+      console.log("🔥 Real-time Request Event Received:", newRequest);
+
+      if (
+        newRequest.bloodGroup?.toUpperCase() === donor.bloodGroup?.toUpperCase()
+      ) {
+        alert(
+          `🚨 Emergency Blood Request Alert!\n\nHospital: ${newRequest.hospitalName || "Emergency Hospital"}\nBlood Group: ${newRequest.bloodGroup}\nUnits: ${newRequest.units}\nUrgency: ${newRequest.urgency}`
+        );
+
+        loadRequests();
+      }
+    });
+
+    return () => {
+      socket.off("new-request");
+    };
+  }, []);
+
   const acceptDonation = async (requestId) => {
+    if (!donor) return;
     try {
-      await axios.put(
-        "https://raktsetu-d1bz.onrender.com/api/requests/accept",
-        {
-          requestId,
-          donorName: donor.name,
-          donorPhone: donor.phone,
-        }
-      );
+      await api.put("/api/requests/accept", {
+        requestId,
+        donorName: donor.name,
+        donorPhone: donor.phone,
+      });
 
-      alert("Donation Accepted ✅");
-
+      alert("Donation Accepted Successfully ✅ Thank you!");
       loadRequests();
     } catch (err) {
-      console.log(err);
-
-      alert("Something went wrong");
+      console.error("Error accepting donation:", err);
+      alert(err.response?.data?.message || "Something went wrong accepting donation");
     }
   };
 
   const logout = () => {
     localStorage.clear();
-    navigate("/");
+    navigate("/donor-register");
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-10">
-
-      <div className="flex justify-between">
-
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-gray-100 p-6 md:p-10">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-md border border-red-50 gap-4">
         <div>
-
-          <h1 className="text-4xl font-bold">
-
-            Welcome
-
-            <span className="text-red-600">
-
-              {" "}
-              {donor.name}
-
-            </span>
-
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800">
+            Welcome, <span className="text-red-600">{donor?.name}</span>
           </h1>
-
-          <p className="mt-2">
-
-            Blood Group : {donor.bloodGroup}
-
+          <p className="mt-2 text-gray-600 font-medium">
+            Blood Group: <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold">{donor?.bloodGroup}</span>
           </p>
-
         </div>
 
         <button
           onClick={logout}
-          className="bg-white-600 text-Black   px-5 py-3 rounded-lg"
+          className="bg-gray-800 hover:bg-gray-900 text-white font-semibold px-6 py-2 rounded-xl transition shadow"
         >
           Logout
         </button>
-
       </div>
 
-      <div className="bg-white rounded-xl shadow mt-10 p-8">
-
-        <h2 className="text-3xl font-bold mb-6">
-
-          Matching Blood Requests
-
+      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl mt-8 p-8 border border-red-50">
+        <h2 className="text-3xl font-bold mb-6 text-gray-800">
+          Matching Blood Requests ({requests.length})
         </h2>
 
         {requests.length === 0 ? (
-          <h2>No Matching Requests</h2>
+          <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            <p className="text-xl font-semibold text-gray-600">No active requests for your blood group right now.</p>
+            <p className="text-sm text-gray-400 mt-2">You will receive live pop-up alerts as soon as a hospital creates a request!</p>
+          </div>
         ) : (
-          requests.map((req) => (
-            <div
-              key={req._id}
-              className="border rounded-lg p-5 mb-5"
-            >
-              <h2 className="text-xl font-bold">
-
-                {req.hospital?.hospitalName}
-
-              </h2>
-
-              <p>Blood Group : {req.bloodGroup}</p>
-
-              <p>Units : {req.units}</p>
-
-              <p>Doctor : {req.doctorName}</p>
-
-              <p>Phone : {req.doctorPhone}</p>
-
-              <p>Urgency : {req.urgency}</p>
-
-              <button
-                onClick={() => acceptDonation(req._id)}
-                className="mt-5 bg-green-600 text-white px-5 py-2 rounded-lg"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {requests.map((req) => (
+              <div
+                key={req._id}
+                className="border border-red-100 rounded-xl p-6 shadow-sm hover:shadow-md transition bg-gradient-to-b from-white to-red-50/30 flex flex-col justify-between"
               >
-                Accept Donation
-              </button>
-            </div>
-          ))
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-xl font-bold text-gray-900">
+                      🏥 {req.hospital?.hospitalName || "Emergency Request"}
+                    </h3>
+                    <span className="bg-red-600 text-white text-xs px-3 py-1 rounded-full font-bold">
+                      {req.urgency}
+                    </span>
+                  </div>
+
+                  <p className="text-gray-700 text-sm mb-1">
+                    🩸 <strong>Blood Group:</strong> {req.bloodGroup}
+                  </p>
+                  <p className="text-gray-700 text-sm mb-1">
+                    📦 <strong>Units Needed:</strong> {req.units}
+                  </p>
+                  <p className="text-gray-700 text-sm mb-1">
+                    👨‍⚕️ <strong>Doctor:</strong> {req.doctorName}
+                  </p>
+                  <p className="text-gray-700 text-sm">
+                    📞 <strong>Phone:</strong> {req.doctorPhone}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => acceptDonation(req._id)}
+                  className="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition shadow"
+                >
+                  🤝 Accept Donation Request
+                </button>
+              </div>
+            ))}
+          </div>
         )}
-
       </div>
-
     </div>
   );
 }

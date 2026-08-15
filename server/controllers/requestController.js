@@ -4,18 +4,21 @@ const sendEmail = require("../utils/sendEmail");
 const calculateDistance = require("../utils/calculateDistance");
 const compatibility = require("../utils/bloodCompatibility");
 
-
 const createRequest = async (req, res) => {
   try {
     const {
       hospital,
-      bloodGroup,
+      bloodGroup: rawBloodGroup,
       units,
       urgency,
       doctorName,
       doctorPhone,
       radius,
     } = req.body;
+
+    const bloodGroup = rawBloodGroup ? rawBloodGroup.trim().toUpperCase() : "";
+
+    const compatibleGroups = compatibility[bloodGroup] || [bloodGroup];
 
     const request = await Request.create({
       hospital,
@@ -27,48 +30,55 @@ const createRequest = async (req, res) => {
       radius,
     });
 
-      const hospitalData = await request.populate("hospital");
+    const hospitalData = await request.populate("hospital");
 
-     const today = new Date();
+    const today = new Date();
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(today.getDate() - 90);
 
-const ninetyDaysAgo = new Date();
-ninetyDaysAgo.setDate(today.getDate() - 90);
+    const donors = await Donor.find({
+      bloodGroup: {
+        $in: compatibleGroups,
+      },
+      consent: true,
+      age: {
+        $gte: 18,
+        $lte: 60,
+      },
+      weight: {
+        $gte: 50,
+      },
+    });
 
-const donors = await Donor.find({
-  bloodGroup: {
-  $in: compatibility[bloodGroup],
-},
-  consent: true,
-  age: {
-    $gte: 18,
-    $lte: 60,
-  },
-  weight: {
-    $gte: 50,
-  },
-});
+    const eligibleDonors = donors.filter((donor) => {
+      if (donor.lastDonationDate && donor.lastDonationDate > ninetyDaysAgo) {
+        return false;
+      }
+      return true;
+    });
 
-const eligibleDonors = donors.filter((donor) => {
-  if (!donor.lastDonationDate) return true;
+    for (const donor of eligibleDonors) {
+      if (
+        hospitalData.hospital &&
+        hospitalData.hospital.latitude != null &&
+        hospitalData.hospital.longitude != null &&
+        donor.latitude != null &&
+        donor.longitude != null
+      ) {
+        const distance = calculateDistance(
+          hospitalData.hospital.latitude,
+          hospitalData.hospital.longitude,
+          donor.latitude,
+          donor.longitude
+        );
 
-  return donor.lastDonationDate <= ninetyDaysAgo;
-});
+        const mapLink = `https://www.google.com/maps/dir/${donor.latitude},${donor.longitude}/${hospitalData.hospital.latitude},${hospitalData.hospital.longitude}`;
 
-for (const donor of eligibleDonors) {
-
-  const distance = calculateDistance(
-    hospitalData.hospital.latitude,
-    hospitalData.hospital.longitude,
-    donor.latitude,
-    donor.longitude
-  );
-
-  const mapLink = `https://www.google.com/maps/dir/${donor.latitude},${donor.longitude}/${hospitalData.hospital.latitude},${hospitalData.hospital.longitude}`;
-
-  await sendEmail(
-    donor.email,
-    "🚨 Emergency Blood Request - RaktSetu",
-    `Hello ${donor.name},
+        try {
+          await sendEmail(
+            donor.email,
+            "🚨 Emergency Blood Request - RaktSetu",
+            `Hello ${donor.name},
 
 A nearby hospital urgently needs blood.
 
@@ -112,33 +122,35 @@ Please login to RaktSetu immediately if you are willing to donate.
 Thank you ❤️
 
 — Team RaktSetu`
-  );
-}
+          );
+        } catch (emailError) {
+          console.warn(`Failed to send email to ${donor.email}:`, emailError.message);
+        }
+      }
+    }
 
-const io = req.app.get("io");
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("new-request", {
+        hospital,
+        hospitalName: hospitalData.hospital?.hospitalName,
+        bloodGroup,
+        units,
+        urgency,
+        doctorName,
+        doctorPhone,
+        radius,
+      });
+    }
 
-io.emit("new-request", {
-  hospital,
-  bloodGroup,
-  units,
-  urgency,
-  doctorName,
-  doctorPhone,
-  radius,
-});
-
-     res.status(201).json({
-  message: `Blood Request Created Successfully. ${eligibleDonors.length} eligible donor(s) found.`,
-  request,
-});   
-
-
-
+    res.status(201).json({
+      message: `Blood Request Created Successfully. ${eligibleDonors.length} eligible donor(s) found.`,
+      request,
+    });
   } catch (error) {
-    console.log(error);
-
+    console.error("Error creating request:", error);
     res.status(500).json({
-      message: "Server Error",
+      message: error.message || "Server Error",
     });
   }
 };
@@ -151,8 +163,7 @@ const getRequests = async (req, res) => {
 
     res.json(requests);
   } catch (error) {
-    console.log(error);
-
+    console.error("Error fetching requests:", error);
     res.status(500).json({
       message: "Server Error",
     });
@@ -172,28 +183,28 @@ const acceptRequest = async (req, res) => {
     }
 
     const alreadyAccepted = request.acceptedDonors.find(
-  (donor) => donor.phone === donorPhone
-);
+      (donor) => donor.phone === donorPhone
+    );
 
-if (alreadyAccepted) {
-  return res.status(400).json({
-    message: "You have already accepted this request.",
-  });
-}
+    if (alreadyAccepted) {
+      return res.status(400).json({
+        message: "You have already accepted this request.",
+      });
+    }
 
-request.collectedUnits += 1;
+    request.collectedUnits += 1;
 
-request.acceptedDonors.push({
-  name: donorName,
-  phone: donorPhone,
-  acceptedAt: new Date(),
-});
+    request.acceptedDonors.push({
+      name: donorName,
+      phone: donorPhone,
+      acceptedAt: new Date(),
+    });
 
-if (request.collectedUnits >= request.units) {
-  request.status = "Completed";
-} else {
-  request.status = "Accepted";
-}
+    if (request.collectedUnits >= request.units) {
+      request.status = "Completed";
+    } else {
+      request.status = "Accepted";
+    }
 
     await request.save();
 
@@ -201,8 +212,7 @@ if (request.collectedUnits >= request.units) {
       message: "Donation Accepted Successfully",
     });
   } catch (error) {
-    console.log(error);
-
+    console.error("Error accepting request:", error);
     res.status(500).json({
       message: "Server Error",
     });
@@ -228,26 +238,17 @@ const completeRequest = async (req, res) => {
     res.json({
       message: "Request Completed Successfully",
     });
-
   } catch (error) {
-    console.log(error);
-
+    console.error("Error completing request:", error);
     res.status(500).json({
       message: "Server Error",
     });
   }
 };
 
-
 const getEligibleDonors = async (req, res) => {
   try {
-    const request = await Request.findById(req.params.requestId)
-  .populate("hospital");
-
-      console.log("========== REQUEST ==========");
-console.log(request);
-console.log("=============================");
-
+    const request = await Request.findById(req.params.requestId).populate("hospital");
 
     if (!request) {
       return res.status(404).json({
@@ -255,15 +256,17 @@ console.log("=============================");
       });
     }
 
-    const today = new Date();
+    const bloodGroup = request.bloodGroup ? request.bloodGroup.trim().toUpperCase() : "";
+    const compatibleGroups = compatibility[bloodGroup] || [bloodGroup];
 
+    const today = new Date();
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(today.getDate() - 90);
 
     const donors = await Donor.find({
       bloodGroup: {
-  $in: compatibility[request.bloodGroup],
-},
+        $in: compatibleGroups,
+      },
       consent: true,
       age: {
         $gte: 18,
@@ -275,57 +278,43 @@ console.log("=============================");
     });
 
     const eligibleDonors = donors.filter((donor) => {
-  // Last Donation Check
-  if (
-    donor.lastDonationDate &&
-    donor.lastDonationDate > ninetyDaysAgo
-  ) 
+      if (donor.lastDonationDate && donor.lastDonationDate > ninetyDaysAgo) {
+        return false;
+      }
 
+      if (
+        donor.latitude == null ||
+        donor.longitude == null ||
+        !request.hospital ||
+        request.hospital.latitude == null ||
+        request.hospital.longitude == null
+      ) {
+        return false;
+      }
 
-  // GPS Check
-  if (
-    donor.latitude == null ||
-    donor.longitude == null ||
-    request.hospital.latitude == null ||
-    request.hospital.longitude == null
-  ) {
-    return false;
-  }
+      const distance = calculateDistance(
+        request.hospital.latitude,
+        request.hospital.longitude,
+        donor.latitude,
+        donor.longitude
+      );
 
-  const distance = calculateDistance(
-    request.hospital.latitude,
-    request.hospital.longitude,
-    donor.latitude,
-    donor.longitude
-  );
+      donor._doc.distance = distance.toFixed(2);
 
-  donor._doc.distance = distance.toFixed(2);
-
-  console.log(
-  donor.name,
-  "->",
-  donor._doc.distance,
-  "KM"
-);
-
-  return distance <= request.radius;
-
-
-});
+      return request.radius ? distance <= request.radius : true;
+    });
 
     res.json({
-  totalEligible: eligibleDonors.length,
-  hospital: {
-    latitude: request.hospital.latitude,
-    longitude: request.hospital.longitude,
-    hospitalName: request.hospital.hospitalName,
-  },
-  donors: eligibleDonors,
-});
-
+      totalEligible: eligibleDonors.length,
+      hospital: {
+        latitude: request.hospital?.latitude,
+        longitude: request.hospital?.longitude,
+        hospitalName: request.hospital?.hospitalName,
+      },
+      donors: eligibleDonors,
+    });
   } catch (error) {
-    console.log(error);
-
+    console.error("Error fetching eligible donors:", error);
     res.status(500).json({
       message: "Server Error",
     });

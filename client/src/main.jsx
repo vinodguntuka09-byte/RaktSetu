@@ -5,11 +5,9 @@ import App from "./App";
 import socket from "./socket";
 import "./index.css";
 
-import { generateToken } from "./getToken";
 
 console.log("MAIN FILE RUNNING");
 
-generateToken();
 
 socket.on("connect", () => {
   console.log("🟢 Connected to Socket.IO:", socket.id);
