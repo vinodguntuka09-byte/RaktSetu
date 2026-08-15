@@ -130,7 +130,7 @@ export default function HospitalDashboard() {
         </button>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="w-full px-6 py-8">
         <div className="w-full bg-white rounded-2xl shadow-xl p-8 mb-8">
           <h2 className="text-3xl font-bold text-gray-800 mb-8">Create Blood Request</h2>
 

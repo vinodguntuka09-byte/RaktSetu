@@ -77,7 +77,7 @@ export default function DonorDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-gray-100 p-6 md:p-10">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-md border border-red-50 gap-4">
+      <div className="max-w-full mx-auto flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-md border border-red-50 gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800">
             Welcome, <span className="text-red-600">{donor?.name}</span>
