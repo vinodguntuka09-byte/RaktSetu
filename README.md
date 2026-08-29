@@ -1,408 +1,398 @@
 # 🩸 RaktSetu
 
-> **Emergency Blood Donation and Hospital Management System**
+### Real-Time Emergency Blood Donor Coordination Platform
 
-![React](https://img.shields.io/badge/Frontend-React-blue)
-![Node.js](https://img.shields.io/badge/Backend-Node.js-green)
-![Express](https://img.shields.io/badge/Framework-Express-black)
-![MongoDB](https://img.shields.io/badge/Database-MongoDB-darkgreen)
-![Socket.IO](https://img.shields.io/badge/Realtime-Socket.IO-lightgrey)
-![Leaflet](https://img.shields.io/badge/Maps-Leaflet-success)
-![License](https://img.shields.io/badge/License-MIT-red)
+RaktSetu is a real-time emergency blood coordination platform that connects hospitals with eligible nearby blood donors during critical situations.
 
----
+The platform helps hospitals create emergency blood requests and intelligently identify suitable donors using blood-group compatibility, donor eligibility, GPS-based distance, and a configurable search radius.
 
-## 📖 Overview
+RaktSetu also provides real-time donor notifications, email alerts, SMS notifications, hospital–donor map visualization, and donation tracking.
 
-RaktSetu is a smart emergency blood donation platform that connects hospitals with nearby eligible blood donors during emergencies.
+## 🚨 The Problem
 
-Unlike traditional blood donation systems, RaktSetu intelligently identifies compatible donors, verifies eligibility, calculates real-time distance, and notifies only the most suitable donors. This helps hospitals receive blood faster while avoiding unnecessary notifications to all registered donors.
+During medical emergencies, finding a suitable blood donor quickly can be difficult.
 
-The system is designed to make emergency blood requests faster, smarter, and more reliable.
+Hospitals may need to:
 
----
+- Search for compatible blood donors
+- Identify donors who are medically eligible
+- Find donors within a reasonable distance
+- Contact donors quickly
+- Track who has accepted the request
 
-## 🎯 Problem Statement
+RaktSetu brings these steps together into a single platform.
 
-During emergencies, hospitals often struggle to find eligible blood donors quickly. Existing systems generally notify all registered donors without checking compatibility, medical eligibility, or distance.
+## 💡 Our Solution
 
-This causes:
+RaktSetu creates a direct communication channel between hospitals and nearby eligible donors.
 
-- Delay in finding suitable donors
-- Unnecessary notifications
-- Lower donor response rate
-- Increased workload for hospitals
+A hospital creates an emergency blood request, and the system:
 
-RaktSetu solves these problems using intelligent filtering and location-based matching.
+1. Checks blood-group compatibility
+2. Filters donors based on eligibility
+3. Calculates the distance between the hospital and donors
+4. Finds donors within the requested radius
+5. Sends notifications to eligible donors
+6. Allows donors to accept the request
+7. Tracks collected blood units
+8. Allows the hospital to complete the request
 
----
+## ✨ Key Features
 
-# ✨ Features
+### 🏥 Hospital Management
+- Hospital registration and login
+- JWT-based authentication
+- Hospital-specific blood request management
+- Hospitals can view only their own requests
+- Track accepted donors and collected blood units
+- Complete blood requests when requirements are fulfilled
 
-## 👨‍⚕️ Hospital Module
+### 🩸 Donor Management
+- Donor registration and login
+- Blood group information
+- Age and weight eligibility
+- Last donation date tracking
+- Donor consent management
+- GPS-based donor location
 
-- Hospital Registration & Login
-- Create Emergency Blood Requests
-- Set Blood Group, Units & Emergency Priority
-- Set Search Radius (KM)
-- View Eligible Donors
-- View Donor Locations on Interactive Map
-- Track Collected Blood Units
-- View Accepted Donors
-- Automatic Request Completion
+### 🧬 Smart Blood Matching
+RaktSetu identifies suitable donors using:
 
----
+- Blood-group compatibility
+- Age eligibility
+- Weight eligibility
+- Consent status
+- 90-day donation interval
+- Geographic distance
+- Hospital-defined search radius
 
-## 🩸 Donor Module
+### 📍 GPS-Based Matching
+The system calculates the distance between the requesting hospital and eligible donors.
 
-- Donor Registration & Login
-- GPS Location Capture
-- Blood Group Registration
-- Accept Blood Requests
-- Prevent Duplicate Acceptance
-- View Nearby Blood Requests
+Hospitals can view:
 
----
+- Donor distance from the hospital
+- Hospital location
+- Donor locations
+- Visual connections between the hospital and eligible donors on the map
 
-## 🧬 Smart Matching
+### 📧 Email Notifications
+Eligible donors receive an emergency blood request email containing:
 
-- Blood Compatibility Matching
-- Radius-Based Donor Search
-- Distance Calculation
-- Age Validation (18–60)
-- Weight Validation (50kg+)
-- 90-Day Donation Eligibility Check
-- Consent-Based Donor Filtering
+- Hospital information
+- Blood group required
+- Required units
+- Urgency level
+- Doctor contact details
+- Distance from the hospital
+- Google Maps direction link
 
----
+### 📱 SMS Notifications
+RaktSetu integrates Twilio for SMS notifications to eligible donors.
 
-## 📧 Emergency Notification System
+The SMS system is designed to provide rapid emergency alerts when a compatible donor is identified.
 
-- Personalized Email Alerts
-- Hospital Details
-- Doctor Details
-- Blood Group & Units Required
-- Google Maps Navigation Link
-- Distance from Hospital
+### ⚡ Real-Time Notifications
+RaktSetu uses Socket.IO to provide real-time emergency request notifications to connected donor dashboards.
 
----
+When a new request is created, matching donors can receive an immediate alert without manually refreshing the page.
 
-## 🗺️ Maps & Location
+### 🗺️ Interactive Map
+The hospital dashboard provides a map showing:
 
-- Interactive Leaflet Map
-- Hospital Location Marker
-- Donor Location Markers
-- Live Distance Display
+- 🏥 Requesting hospital
+- 🩸 Eligible donors
+- 📏 Distance between hospital and donors
+- 🔴 Visual connections between hospital and donor locations
 
----
+### 🤝 Donation Acceptance
+Donors can accept an emergency blood request directly from their dashboard.
 
-## 📊 Request Tracking
+The system records:
 
-- Active Requests
-- Accepted Requests
-- Completed Requests
-- Multiple Donors Per Request
-- Blood Unit Collection Tracking
+- Donor name
+- Donor phone number
+- Acceptance time
+- Number of collected units
+- Request status
 
----
+## 🛠️ Tech Stack
 
-# 🏗️ System Architecture
-
-```text
-                    +----------------------+
-                    |      Hospital        |
-                    | (Create Blood Request)|
-                    +----------+-----------+
-                               |
-                               v
-                    +----------------------+
-                    |     Node.js API      |
-                    |    (Express Server)  |
-                    +----------+-----------+
-                               |
-                 +-------------+--------------+
-                 |                            |
-                 v                            v
-      +-------------------+         +--------------------+
-      | Blood Compatibility|         | Eligibility Check |
-      |      Matching      |         | Age, Weight,      |
-      |                    |         | Consent, 90 Days  |
-      +---------+----------+         +---------+----------+
-                |                              |
-                +--------------+---------------+
-                               |
-                               v
-                 +-----------------------------+
-                 | GPS Distance Calculation     |
-                 | (Haversine Formula)          |
-                 +--------------+--------------+
-                                |
-                                v
-                 +-----------------------------+
-                 | Nearby Eligible Donors      |
-                 +--------------+--------------+
-                                |
-               +----------------+----------------+
-               |                                 |
-               v                                 v
-      +--------------------+          +----------------------+
-      | Email Notification |          | Live Dashboard       |
-      | Google Maps Link   |          | Request Tracking     |
-      +--------------------+          +----------------------+
-               |                                 |
-               +----------------+----------------+
-                                |
-                                v
-                    +--------------------------+
-                    | Donor Accepts Request    |
-                    +------------+-------------+
-                                 |
-                                 v
-                    +--------------------------+
-                    | Blood Units Updated      |
-                    | Status Completed         |
-                    +--------------------------+
-```
-
----
-
-## 🔄 Workflow
-
-1. Hospital creates an emergency blood request.
-2. The system checks blood compatibility.
-3. Donor eligibility is verified (age, weight, consent, and last donation).
-4. GPS distance is calculated using the Haversine formula.
-5. Only nearby eligible donors receive notifications.
-6. Donors receive an email with hospital details and Google Maps navigation.
-7. Donors accept the request.
-8. Blood units collected are updated automatically.
-9. Once all required units are collected, the request status changes to **Completed**.
-
----
-
-# 🛠️ Tech Stack
-
-## Frontend
+### Frontend
 - React.js
-- Tailwind CSS
+- Vite
+- React Router
 - Axios
-- Leaflet (OpenStreetMap)
+- Tailwind CSS
 
-## Backend
+### Backend
 - Node.js
 - Express.js
-- Socket.IO
+- REST APIs
+- JWT Authentication
+- bcrypt.js
 
-## Database
-- MongoDB Atlas
+### Database
+- MongoDB
 - Mongoose
 
-## Authentication
-- JWT (JSON Web Token)
+### Real-Time Communication
+- Socket.IO
 
-## Email Service
-- Nodemailer (Gmail SMTP)
+### Notifications
+- Nodemailer for email notifications
+- Twilio for SMS notifications
 
-## Other Tools
-- Git & GitHub
-- VS Code
-- Postman
+### Maps & Location
+- React Leaflet
+- OpenStreetMap
+- Browser Geolocation API
+- Custom distance calculation using GPS coordinates
 
----
+### Deployment
+- Vercel for frontend deployment
+- Render for backend deployment
 
-# 📂 Project Structure
 
-```
-RaktSetu
+## 🔄 How RaktSetu Works
+
+```text
+🏥 Hospital
+     │
+     │ Create Emergency Blood Request
+     ↓
+🩸 Blood Group + Units + Urgency + Search Radius
+     │
+     ↓
+🧬 Blood Compatibility Check
+     │
+     ↓
+✅ Donor Eligibility Check
+     │
+     ├── Age
+     ├── Weight
+     ├── Consent
+     ├── Last Donation Date
+     └── GPS Location
+     │
+     ↓
+📍 Distance & Radius Matching
+     │
+     ↓
+📧 Email + 📱 SMS + ⚡ Real-Time Alert
+     │
+     ↓
+👤 Donor Receives Emergency Request
+     │
+     ↓
+🤝 Donor Accepts Request
+     │
+     ↓
+📊 Hospital Tracks Collected Units
+     │
+     ↓
+✅ Request Completed
+
+
+## 📁 Project Structure
+
+```text
+RaktSetu/
 │
-├── client
-│   ├── public
-│   ├── src
-│   │   ├── components
-│   │   ├── pages
-│   │   ├── firebase.js
-│   │   ├── socket.js
-│   │   └── App.jsx
-│   └── package.json
+├── client/
+│   ├── public/
+│   └── src/
+│       ├── components/
+│       │   ├── Features.jsx
+│       │   ├── Footer.jsx
+│       │   ├── Hero.jsx
+│       │   ├── Map.jsx
+│       │   ├── Navbar.jsx
+│       │   └── Stats.jsx
+│       │
+│       ├── pages/
+│       │   ├── DonorDashboard.jsx
+│       │   ├── DonorRegister.jsx
+│       │   ├── HospitalDashboard.jsx
+│       │   ├── HospitalLogin.jsx
+│       │   └── LandingPage.jsx
+│       │
+│       ├── api.js
+│       ├── socket.js
+│       ├── App.jsx
+│       └── main.jsx
 │
-├── server
-│   ├── config
-│   ├── controllers
-│   ├── models
-│   ├── routes
-│   ├── utils
-│   ├── server.js
-│   └── package.json
+├── server/
+│   ├── config/
+│   │   └── db.js
+│   │
+│   ├── controllers/
+│   │   ├── donorController.js
+│   │   ├── hospitalController.js
+│   │   ├── hospitalLoginController.js
+│   │   └── requestController.js
+│   │
+│   ├── middleware/
+│   │   └── authMiddleware.js
+│   │
+│   ├── models/
+│   │   ├── Donor.js
+│   │   ├── Hospital.js
+│   │   └── Request.js
+│   │
+│   ├── routes/
+│   │   ├── donorRoutes.js
+│   │   ├── hospitalRoutes.js
+│   │   └── requestRoutes.js
+│   │
+│   ├── utils/
+│   │   ├── bloodCompatibility.js
+│   │   ├── calculateDistance.js
+│   │   ├── sendEmail.js
+│   │   └── sendSMS.js
+│   │
+│   └── server.js
 │
+├── .gitignore
 ├── README.md
-└── .gitignore
-```
+└── package configuration files
 
----
+## 🚀 Installation & Setup
 
-# 🚀 Getting Started
-
-## Prerequisites
-
-Make sure the following software is installed:
-
-- Node.js (v18 or later)
-- MongoDB Atlas Account
-- Git
-- VS Code
-
----
-
-## Clone the Repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/vinodguntuka09-byte/RaktSetu.git
-```
-
-```bash
 cd RaktSetu
-```
 
----
+Setup Frontend
 
-## Install Frontend Dependencies
-
-```bash
 cd client
 npm install
-```
+npm run dev
 
----
+The frontend will run on:
+http://localhost:5173
 
-## Install Backend Dependencies
+Setup Backend
 
-```bash
-cd ../server
+cd server
 npm install
-```
+npm run dev
 
----
+The backend will run on:
+http://localhost:5000
 
-## Configure Environment Variables
-
-Create a `.env` file inside the **server** folder.
-
-```env
+Environment Variables
+Create a .env file inside the server folder.
+Add the required configuration:
 PORT=5000
 
 MONGO_URI=your_mongodb_connection_string
 
-JWT_SECRET=your_secret_key
+JWT_SECRET=your_jwt_secret
 
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_gmail_app_password
-```
+EMAIL_USER=your_email
+EMAIL_PASS=your_email_app_password
 
----
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE_NUMBER=your_twilio_phone_number
 
-## Run Backend
-
-```bash
-cd server
-npm run dev
-```
-
----
-
-## Run Frontend
-
-Open another terminal.
-
-```bash
+Run the Application
+Start both services:
+# Frontend
 cd client
 npm run dev
-```
+
+# Backend
+cd server
+npm run dev
+
+Then open the frontend in your browser..
+
+## 🌐 Live Deployment
+
+RaktSetu is deployed using a separate frontend and backend architecture.
+
+### Frontend
+The React frontend is deployed on **Vercel**.
+
+### Backend
+The Node.js + Express backend is deployed on **Render**.
+
+### Database
+The application uses **MongoDB Atlas** as the cloud database.
+
+### Production Architecture
+
+```text
+User
+  ↓
+Vercel
+  ↓
+React Frontend
+  ↓
+Render
+  ↓
+Node.js + Express API
+  ↓
+MongoDB Atlas
+
+## 🔮 Future Scope
+
+RaktSetu can be expanded into a complete emergency blood coordination ecosystem.
+
+### 🚗 Donor Transportation
+After a donor accepts an emergency request, RaktSetu can coordinate transportation from the donor's location to the hospital.
+
+### 📱 Mobile Application
+A dedicated Android and iOS application can provide faster notifications, location services, and easier donor interaction.
+
+### 🤖 Intelligent Donor Prioritization
+The system can prioritize donors based on distance, availability, blood-group compatibility, urgency, and previous donation history.
+
+### 🏥 Hospital Network
+RaktSetu can connect multiple hospitals, blood banks, and healthcare organizations through a common emergency blood network.
+
+### 📊 Analytics & Monitoring
+Hospitals and administrators can use dashboards to monitor blood demand, donor availability, response times, and completed donations.
+
+### 🌍 Large-Scale Emergency Broadcasting
+The platform can be extended to notify large groups of eligible donors within a geographic area during major emergencies.
+
+
+## 👥 Team
+
+**RaktSetu** was developed as a hackathon project by **Team TSM**.
+
+### 🎯 Project Goal
+
+Our goal is to reduce the time required to find suitable blood donors during medical emergencies by connecting hospitals with eligible nearby donors through a single real-time platform.
 
 ---
 
-Visit:
+## 🏆 Hackathon Project
 
-```
-http://localhost:5173
-```
+RaktSetu was developed as part of our hackathon journey, where we worked on designing, developing, integrating, testing, and deploying the complete application.
 
-The application should now be running successfully.
+The project focuses on solving a real-world healthcare problem using modern web technologies and real-time communication.
 
----
 
-# 🔌 API Endpoints
+## 📄 License
 
-## Hospital APIs
+This project was created as a hackathon project for educational and demonstration purposes.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/hospitals/register` | Register Hospital |
-| POST | `/api/hospitals/login` | Hospital Login |
 
----
+## ❤️ Built for a Real-World Problem
 
-## Donor APIs
+RaktSetu was built with a simple vision:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/donors/register` | Register Donor |
-| POST | `/api/donors/login` | Donor Login |
+> **When every minute matters, finding the right blood donor should not depend on luck.**
 
----
+By combining smart donor matching, location-based filtering, real-time communication, and emergency notifications, RaktSetu aims to make blood donation coordination faster and more accessible.
 
-## Blood Request APIs
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/requests/create` | Create Blood Request |
-| GET | `/api/requests/all` | Get All Requests |
-| GET | `/api/requests/eligible/:requestId` | Get Eligible Donors |
-| PUT | `/api/requests/accept` | Accept Blood Request |
+⭐ **If you find RaktSetu useful, consider giving the repository a star!**
 
----
-
-# 🚀 Future Enhancements
-
-- Blood Stock Management
-- Analytics Dashboard
-- Push Notifications
-- SMS Alerts
-- AI-Based Donor Availability Prediction
-- Hospital Verification by Government
-- Donor Reward & Badge System
-- Multi-Language Support
-- Real-Time Request Updates using Socket.IO
-- Mobile Application (Android & iOS)
-
----
-
-# 👨‍💻 Contributors
-
-### Team RaktSetu
-
-- Vinod Guntuka
-- Team Members
-
-> Developed RaktSetu.
-
----
-
-# 📄 License
-
-This project is developed for educational and hackathon purposes.
-
-Feel free to fork, learn, and improve the project.
-
-© 2026 Team RaktSetu
-
----
-
-# ⭐ Support
-
-If you like this project,
-
-⭐ Star this repository.
-
-It motivates us to build more impactful open-source projects.
-
-Thank you for visiting RaktSetu ❤️
+Made with ❤️ by **Team TSM**
