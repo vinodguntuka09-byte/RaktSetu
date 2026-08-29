@@ -72,11 +72,13 @@ export default function DonorRegister() {
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             (position) => {
-              submitRegistration(position.coords.latitude, position.coords.longitude);
+              submitRegistration(
+                position.coords.latitude,
+                position.coords.longitude
+              );
             },
             (error) => {
               console.warn("Geolocation warning:", error);
-              // Fallback to coordinates if geolocation is blocked or unavailable
               submitRegistration(null, null);
             },
             { timeout: 5000 }
@@ -93,7 +95,17 @@ export default function DonorRegister() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-gray-100 flex justify-center items-center p-6">
+    <div className="relative min-h-screen bg-gradient-to-br from-red-50 via-white to-gray-100 flex justify-center items-center p-6">
+
+      {/* Back to Home */}
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+        className="absolute top-6 left-6 text-red-600 font-semibold hover:text-red-700 hover:underline transition bg-white px-4 py-2 rounded-lg shadow-sm"
+      >
+        ← Back to Home
+      </button>
+
       <form
         onSubmit={handleSubmit}
         className="bg-white p-10 rounded-2xl shadow-xl w-[520px] max-w-full border border-red-50"
@@ -104,7 +116,10 @@ export default function DonorRegister() {
 
         {!isLogin && (
           <>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Full Name</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              Full Name
+            </label>
+
             <input
               className="border p-3 rounded-lg w-full mb-3 outline-none focus:ring-2 focus:ring-red-500"
               placeholder="e.g. John Doe"
@@ -114,7 +129,10 @@ export default function DonorRegister() {
               required
             />
 
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Phone Number</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              Phone Number
+            </label>
+
             <input
               className="border p-3 rounded-lg w-full mb-3 outline-none focus:ring-2 focus:ring-red-500"
               placeholder="e.g. 9876543210"
@@ -124,7 +142,10 @@ export default function DonorRegister() {
               required
             />
 
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Blood Group</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              Blood Group
+            </label>
+
             <select
               className="border p-3 rounded-lg w-full mb-3 outline-none focus:ring-2 focus:ring-red-500 bg-white"
               name="bloodGroup"
@@ -144,7 +165,10 @@ export default function DonorRegister() {
 
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Age</label>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  Age
+                </label>
+
                 <input
                   className="border p-3 rounded-lg w-full outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="Age (18-60)"
@@ -159,7 +183,10 @@ export default function DonorRegister() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Weight (KG)</label>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  Weight (KG)
+                </label>
+
                 <input
                   className="border p-3 rounded-lg w-full outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="Weight (50+ KG)"
@@ -173,7 +200,10 @@ export default function DonorRegister() {
               </div>
             </div>
 
-            <label className="block text-xs font-semibold text-gray-600 mb-1">City</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              City
+            </label>
+
             <input
               className="border p-3 rounded-lg w-full mb-3 outline-none focus:ring-2 focus:ring-red-500"
               placeholder="e.g. Hyderabad"
@@ -183,7 +213,10 @@ export default function DonorRegister() {
               required
             />
 
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Last Donation Date (Optional)</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              Last Donation Date (Optional)
+            </label>
+
             <input
               className="border p-3 rounded-lg w-full mb-4 outline-none focus:ring-2 focus:ring-red-500"
               type="date"
@@ -194,7 +227,10 @@ export default function DonorRegister() {
           </>
         )}
 
-        <label className="block text-xs font-semibold text-gray-600 mb-1">Email Address</label>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">
+          Email Address
+        </label>
+
         <input
           className="border p-3 rounded-lg w-full mb-3 outline-none focus:ring-2 focus:ring-red-500"
           placeholder="your.email@example.com"
@@ -205,7 +241,10 @@ export default function DonorRegister() {
           required
         />
 
-        <label className="block text-xs font-semibold text-gray-600 mb-1">Password</label>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">
+          Password
+        </label>
+
         <input
           className="border p-3 rounded-lg w-full mb-6 outline-none focus:ring-2 focus:ring-red-500"
           placeholder="Password"
@@ -221,14 +260,20 @@ export default function DonorRegister() {
           disabled={loading}
           className="bg-red-600 text-white w-full p-4 rounded-lg hover:bg-red-700 font-bold transition shadow-lg"
         >
-          {loading ? "Processing..." : isLogin ? "Login" : "Register"}
+          {loading
+            ? "Processing..."
+            : isLogin
+            ? "Login"
+            : "Register"}
         </button>
 
         <p
           onClick={() => setIsLogin(!isLogin)}
           className="mt-6 text-center cursor-pointer text-red-600 font-medium hover:underline"
         >
-          {isLogin ? "New Donor? Register Here" : "Already Registered? Login"}
+          {isLogin
+            ? "New Donor? Register Here"
+            : "Already Registered? Login"}
         </p>
       </form>
     </div>

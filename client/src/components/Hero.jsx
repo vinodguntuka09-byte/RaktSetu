@@ -2,12 +2,10 @@ import { Link } from "react-router-dom";
 
 export default function Hero() {
   return (
-    <section className="min-h-[71vh] flex items-center justify-center bg-red-50">
-
+    <section className="flex-1 flex items-center justify-center bg-red-50 px-6">
       <div className="text-center max-w-4xl">
 
         <h1 className="text-6xl font-bold text-gray-900 leading-tight">
-
           Connecting
 
           <span className="text-red-600">
@@ -19,14 +17,11 @@ export default function Hero() {
           <span className="text-red-600">
             {" "}Life Saving Donors
           </span>
-
         </h1>
 
         <p className="mt-8 text-xl text-gray-600">
-
           RaktSetu instantly alerts nearby eligible blood donors
           through SMS and WhatsApp during medical emergencies.
-
         </p>
 
         <div className="mt-10 flex justify-center gap-6">
@@ -46,9 +41,7 @@ export default function Hero() {
           </Link>
 
         </div>
-
       </div>
-
     </section>
   );
 }

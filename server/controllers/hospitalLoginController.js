@@ -25,6 +25,7 @@ const loginHospital = async (req, res) => {
     const token = jwt.sign(
       {
         id: hospital._id,
+        role: "hospital",
       },
       process.env.JWT_SECRET,
       {

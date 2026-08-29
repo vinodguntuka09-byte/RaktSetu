@@ -5,21 +5,19 @@ const jwt = require("jsonwebtoken");
 // Register Donor
 const registerDonor = async (req, res) => {
   try {
-    
-
-      const {
-  name,
-  email,
-  password,
-  phone,
-  bloodGroup,
-  age,
-  weight,
-  city,
-  lastDonationDate,
-  latitude,
-  longitude,
-} = req.body;
+    const {
+      name,
+      email,
+      password,
+      phone,
+      bloodGroup,
+      age,
+      weight,
+      city,
+      lastDonationDate,
+      latitude,
+      longitude,
+    } = req.body;
 
     const existingDonor = await Donor.findOne({ email });
 
@@ -32,20 +30,20 @@ const registerDonor = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const donor = await Donor.create({
-  name,
-  email,
-  password: hashedPassword,
-  phone,
-  bloodGroup,
-  age,
-  weight,
-  city,
-  latitude,
-  longitude,
-  lastDonationDate,
-});
+      name,
+      email,
+      password: hashedPassword,
+      phone,
+      bloodGroup,
+      age,
+      weight,
+      city,
+      latitude,
+      longitude,
+      lastDonationDate,
+    });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Donor Registered Successfully",
       donor: {
         _id: donor._id,
@@ -59,7 +57,7 @@ const registerDonor = async (req, res) => {
   } catch (error) {
     console.log(error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Server Error",
     });
   }
@@ -89,6 +87,7 @@ const loginDonor = async (req, res) => {
     const token = jwt.sign(
       {
         id: donor._id,
+        role: "donor",
       },
       process.env.JWT_SECRET,
       {
@@ -96,7 +95,7 @@ const loginDonor = async (req, res) => {
       }
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Login Successful",
       token,
       donor: {
@@ -111,7 +110,7 @@ const loginDonor = async (req, res) => {
   } catch (error) {
     console.log(error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Server Error",
     });
   }

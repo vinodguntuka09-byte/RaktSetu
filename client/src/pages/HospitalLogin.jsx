@@ -45,7 +45,9 @@ export default function HospitalLogin() {
       },
       (err) => {
         console.warn("Geolocation error:", err);
-        alert("Unable to fetch location automatically. You can enter Latitude and Longitude manually below if needed.");
+        alert(
+          "Unable to fetch location automatically. You can enter Latitude and Longitude manually below if needed."
+        );
       }
     );
   };
@@ -63,15 +65,22 @@ export default function HospitalLogin() {
         });
 
         localStorage.setItem("token", res.data.token);
-        localStorage.setItem("hospital", JSON.stringify(res.data.hospital));
+        localStorage.setItem(
+          "hospital",
+          JSON.stringify(res.data.hospital)
+        );
 
         alert("Login Successful ✅");
         navigate("/dashboard");
       } else {
         const payload = {
           ...formData,
-          latitude: formData.latitude ? Number(formData.latitude) : 17.38504,
-          longitude: formData.longitude ? Number(formData.longitude) : 78.48667,
+          latitude: formData.latitude
+            ? Number(formData.latitude)
+            : 17.38504,
+          longitude: formData.longitude
+            ? Number(formData.longitude)
+            : 78.48667,
         };
 
         await api.post("/api/hospitals/register", payload);
@@ -93,20 +102,36 @@ export default function HospitalLogin() {
       }
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Something went wrong");
+
+      alert(
+        err.response?.data?.message ||
+          "Something went wrong"
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-gray-100 px-4 py-8">
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-gray-100 px-4 py-8">
+
+      {/* Back to Home */}
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+        className="absolute top-6 left-6 text-red-600 font-semibold hover:text-red-700 hover:underline transition bg-white px-4 py-2 rounded-lg shadow-sm"
+      >
+        ← Back to Home
+      </button>
+
       <form
         onSubmit={handleSubmit}
         className="bg-white shadow-xl rounded-2xl p-12 w-[700px] max-w-full"
       >
         <h1 className="text-4xl font-extrabold text-center text-red-600 mb-10">
-          {isLogin ? "Hospital Login" : "Hospital Registration"}
+          {isLogin
+            ? "Hospital Login"
+            : "Hospital Registration"}
         </h1>
 
         {!isLogin && (
@@ -171,7 +196,10 @@ export default function HospitalLogin() {
 
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
-                <label className="text-xs text-gray-500 font-semibold mb-1 block">Latitude</label>
+                <label className="text-xs text-gray-500 font-semibold mb-1 block">
+                  Latitude
+                </label>
+
                 <input
                   type="number"
                   step="any"
@@ -184,7 +212,10 @@ export default function HospitalLogin() {
               </div>
 
               <div>
-                <label className="text-xs text-gray-500 font-semibold mb-1 block">Longitude</label>
+                <label className="text-xs text-gray-500 font-semibold mb-1 block">
+                  Longitude
+                </label>
+
                 <input
                   type="number"
                   step="any"
