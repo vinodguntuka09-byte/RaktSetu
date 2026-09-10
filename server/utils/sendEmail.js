@@ -1,42 +1,56 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
 const sendEmail = async (to, subject, text) => {
   try {
-    const user = process.env.EMAIL_USER;
-    const pass = process.env.EMAIL_PASS;
+    const apiKey = process.env.RESEND_API_KEY;
+    const from = process.env.EMAIL_FROM;
 
-    if (!user || !pass) {
+    if (!apiKey || !from) {
       console.log(`\n========================================`);
-      console.log(`⚠️ [EMAIL SIMULATION LOG - CREDENTIALS MISSING IN ENV]`);
+      console.log(`⚠️ [EMAIL SIMULATION LOG - RESEND ENV MISSING]`);
       console.log(`📩 To: ${to}`);
       console.log(`📌 Subject: ${subject}`);
       console.log(`----------------------------------------`);
       console.log(text);
       console.log(`========================================\n`);
-      return { success: true, simulated: true };
+
+      return {
+        success: true,
+        simulated: true,
+      };
     }
 
-    // ✅ Uses Gmail service with direct SSL (port 465) for reliable cloud delivery
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: user,
-        pass: pass,
-      },
+    const resend = new Resend(apiKey);
+
+    const response = await resend.emails.send({
+      from: from,
+      to: [to],
+      subject: subject,
+      text: text,
     });
 
-    const info = await transporter.sendMail({
-      from: `"RaktSetu" <${user}>`,
-      to,
-      subject,
-      text,
-    });
+    if (response.error) {
+      throw new Error(response.error.message);
+    }
 
-    console.log(`✅ Email sent successfully to ${to}: ${info.messageId}`);
-    return { success: true, info };
+    console.log(
+      `✅ Email sent successfully to ${to}: ${response.data?.id || "N/A"}`
+    );
+
+    return {
+      success: true,
+      info: response.data,
+    };
   } catch (error) {
-    console.error(`❌ EMAIL ERROR sending to ${to}:`, error.message);
-    return { success: false, error: error.message };
+    console.error(
+      `❌ EMAIL ERROR sending to ${to}:`,
+      error.message
+    );
+
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 };
 
