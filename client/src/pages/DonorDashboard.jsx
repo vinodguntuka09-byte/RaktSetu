@@ -95,7 +95,7 @@ export default function DonorDashboard() {
         </button>
       </div>
 
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl mt-8 p-8 border border-red-50">
+      <div className="w-full bg-white rounded-2xl shadow-xl mt-8 p-8 border border-red-50">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">
           Matching Blood Requests ({requests.length})
         </h2>
