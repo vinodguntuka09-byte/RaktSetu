@@ -38,7 +38,8 @@ const createRequest = async (req, res) => {
       });
     }
 
-    const compatibleGroups = compatibility[bloodGroup] || [bloodGroup];
+    const compatibleGroups =
+      compatibility[bloodGroup] || [bloodGroup];
 
     const request = await Request.create({
       hospital,
@@ -104,7 +105,18 @@ const createRequest = async (req, res) => {
       return distance <= numericRadius;
     });
 
+    // ========================================
+    // EMAIL NOTIFICATIONS
+    // ========================================
+
     for (const donor of eligibleDonors) {
+      if (!donor.email) {
+        console.warn(
+          `⚠️ Skipping email for ${donor.name}: no email address`
+        );
+        continue;
+      }
+
       const distance = calculateDistance(
         hospitalData.hospital.latitude,
         hospitalData.hospital.longitude,
@@ -114,12 +126,7 @@ const createRequest = async (req, res) => {
 
       const mapLink = `https://www.google.com/maps/dir/${donor.latitude},${donor.longitude}/${hospitalData.hospital.latitude},${hospitalData.hospital.longitude}`;
 
-      // EMAIL
-      try {
-        await sendEmail(
-          donor.email,
-          "🚨 Emergency Blood Request - RaktSetu",
-          `Hello ${donor.name},
+      const emailText = `Hello ${donor.name},
 
 A nearby hospital urgently needs blood.
 
@@ -162,16 +169,38 @@ Please login to RaktSetu immediately if you are willing to donate.
 
 Thank you ❤️
 
-— Team RaktSetu`
+— Team RaktSetu`;
+
+      try {
+        const emailResult = await sendEmail(
+          donor.email,
+          "🚨 Emergency Blood Request - RaktSetu",
+          emailText
         );
+
+        if (emailResult?.success) {
+          console.log(
+            `✅ Emergency email sent to ${donor.email}`
+          );
+        } else {
+          console.warn(
+            `⚠️ Email failed for ${donor.email}:`,
+            emailResult?.error || "Unknown email error"
+          );
+        }
       } catch (emailError) {
         console.warn(
-          `Failed to send email to ${donor.email}:`,
+          `⚠️ Failed to send email to ${donor.email}:`,
           emailError.message
         );
       }
+    }
 
-      // SMS
+    // ========================================
+    // SMS NOTIFICATIONS
+    // ========================================
+
+    for (const donor of eligibleDonors) {
       try {
         await sendSMS(donor.phone);
       } catch (smsError) {
@@ -182,7 +211,10 @@ Thank you ❤️
       }
     }
 
+    // ========================================
     // REAL-TIME SOCKET EVENT
+    // ========================================
+
     const io = req.app.get("io");
 
     if (io) {
@@ -203,10 +235,14 @@ Thank you ❤️
       request,
     });
   } catch (error) {
-    console.error("Error creating request:", error);
+    console.error(
+      "Error creating request:",
+      error
+    );
 
     return res.status(500).json({
-      message: error.message || "Server Error",
+      message:
+        error.message || "Server Error",
     });
   }
 };
@@ -215,7 +251,6 @@ const getRequests = async (req, res) => {
   try {
     let requests;
 
-    // Hospital: only show requests created by the logged-in hospital
     if (req.user?.role === "hospital") {
       requests = await Request.find({
         hospital: req.user.id,
@@ -223,7 +258,6 @@ const getRequests = async (req, res) => {
         .populate("hospital", "hospitalName")
         .sort({ createdAt: -1 });
     } else {
-      // Donor: keep existing behavior
       requests = await Request.find()
         .populate("hospital", "hospitalName")
         .sort({ createdAt: -1 });
@@ -231,7 +265,10 @@ const getRequests = async (req, res) => {
 
     return res.json(requests);
   } catch (error) {
-    console.error("Error fetching requests:", error);
+    console.error(
+      "Error fetching requests:",
+      error
+    );
 
     return res.status(500).json({
       message: "Server Error",
@@ -241,9 +278,15 @@ const getRequests = async (req, res) => {
 
 const acceptRequest = async (req, res) => {
   try {
-    const { requestId, donorName, donorPhone } = req.body;
+    const {
+      requestId,
+      donorName,
+      donorPhone,
+    } = req.body;
 
-    const request = await Request.findById(requestId);
+    const request = await Request.findById(
+      requestId
+    );
 
     if (!request) {
       return res.status(404).json({
@@ -253,27 +296,35 @@ const acceptRequest = async (req, res) => {
 
     if (request.status === "Completed") {
       return res.status(400).json({
-        message: "This blood request is already completed.",
+        message:
+          "This blood request is already completed.",
       });
     }
 
-    const alreadyAccepted = request.acceptedDonors.find(
-      (donor) => donor.phone === donorPhone
-    );
+    const alreadyAccepted =
+      request.acceptedDonors.find(
+        (donor) =>
+          donor.phone === donorPhone
+      );
 
     if (alreadyAccepted) {
       return res.status(400).json({
-        message: "You have already accepted this request.",
+        message:
+          "You have already accepted this request.",
       });
     }
 
-    if (request.collectedUnits >= request.units) {
+    if (
+      request.collectedUnits >=
+      request.units
+    ) {
       request.status = "Completed";
 
       await request.save();
 
       return res.status(400).json({
-        message: "All required blood units have already been collected.",
+        message:
+          "All required blood units have already been collected.",
       });
     }
 
@@ -285,7 +336,10 @@ const acceptRequest = async (req, res) => {
       acceptedAt: new Date(),
     });
 
-    if (request.collectedUnits >= request.units) {
+    if (
+      request.collectedUnits >=
+      request.units
+    ) {
       request.status = "Completed";
     } else {
       request.status = "Accepted";
@@ -294,13 +348,19 @@ const acceptRequest = async (req, res) => {
     await request.save();
 
     return res.json({
-      message: "Donation Accepted Successfully",
-      collectedUnits: request.collectedUnits,
-      requiredUnits: request.units,
+      message:
+        "Donation Accepted Successfully",
+      collectedUnits:
+        request.collectedUnits,
+      requiredUnits:
+        request.units,
       status: request.status,
     });
   } catch (error) {
-    console.error("Error accepting request:", error);
+    console.error(
+      "Error accepting request:",
+      error
+    );
 
     return res.status(500).json({
       message: "Server Error",
@@ -312,7 +372,9 @@ const completeRequest = async (req, res) => {
   try {
     const { requestId } = req.body;
 
-    const request = await Request.findById(requestId);
+    const request = await Request.findById(
+      requestId
+    );
 
     if (!request) {
       return res.status(404).json({
@@ -325,10 +387,14 @@ const completeRequest = async (req, res) => {
     await request.save();
 
     return res.json({
-      message: "Request Completed Successfully",
+      message:
+        "Request Completed Successfully",
     });
   } catch (error) {
-    console.error("Error completing request:", error);
+    console.error(
+      "Error completing request:",
+      error
+    );
 
     return res.status(500).json({
       message: "Server Error",
@@ -350,21 +416,29 @@ const getEligibleDonors = async (req, res) => {
 
     if (!request.hospital) {
       return res.status(404).json({
-        message: "Hospital information not found for this request.",
+        message:
+          "Hospital information not found for this request.",
       });
     }
 
-    const bloodGroup = request.bloodGroup
-      ? request.bloodGroup.trim().toUpperCase()
-      : "";
+    const bloodGroup =
+      request.bloodGroup
+        ? request.bloodGroup
+          .trim()
+          .toUpperCase()
+        : "";
 
     const compatibleGroups =
-      compatibility[bloodGroup] || [bloodGroup];
+      compatibility[bloodGroup] || [
+        bloodGroup,
+      ];
 
     const today = new Date();
 
     const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(today.getDate() - 90);
+    ninetyDaysAgo.setDate(
+      today.getDate() - 90
+    );
 
     const donors = await Donor.find({
       bloodGroup: {
@@ -380,44 +454,56 @@ const getEligibleDonors = async (req, res) => {
       },
     });
 
-    const eligibleDonors = donors.filter((donor) => {
-      if (
-        donor.lastDonationDate &&
-        donor.lastDonationDate > ninetyDaysAgo
-      ) {
-        return false;
-      }
+    const eligibleDonors =
+      donors.filter((donor) => {
+        if (
+          donor.lastDonationDate &&
+          donor.lastDonationDate >
+          ninetyDaysAgo
+        ) {
+          return false;
+        }
 
-      if (
-        donor.latitude == null ||
-        donor.longitude == null ||
-        request.hospital.latitude == null ||
-        request.hospital.longitude == null
-      ) {
-        return false;
-      }
+        if (
+          donor.latitude == null ||
+          donor.longitude == null ||
+          request.hospital.latitude ==
+          null ||
+          request.hospital.longitude ==
+          null
+        ) {
+          return false;
+        }
 
-      const distance = calculateDistance(
-        request.hospital.latitude,
-        request.hospital.longitude,
-        donor.latitude,
-        donor.longitude
-      );
+        const distance =
+          calculateDistance(
+            request.hospital.latitude,
+            request.hospital.longitude,
+            donor.latitude,
+            donor.longitude
+          );
 
-      donor._doc.distance = distance.toFixed(2);
+        donor._doc.distance =
+          distance.toFixed(2);
 
-      return request.radius
-        ? distance <= Number(request.radius)
-        : true;
-    });
+        return request.radius
+          ? distance <=
+          Number(request.radius)
+          : true;
+      });
 
     return res.json({
-      totalEligible: eligibleDonors.length,
+      totalEligible:
+        eligibleDonors.length,
       hospital: {
-        latitude: request.hospital.latitude,
-        longitude: request.hospital.longitude,
-        hospitalName: request.hospital.hospitalName,
-        address: request.hospital.address,
+        latitude:
+          request.hospital.latitude,
+        longitude:
+          request.hospital.longitude,
+        hospitalName:
+          request.hospital.hospitalName,
+        address:
+          request.hospital.address,
       },
       donors: eligibleDonors,
     });
