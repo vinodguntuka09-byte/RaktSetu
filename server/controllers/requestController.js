@@ -205,10 +205,58 @@ Your timely response may help support an urgent medical requirement.
 
     for (const donor of eligibleDonors) {
       try {
-        await sendSMS(donor.phone);
+        const distance =
+          calculateDistance(
+            hospitalData.hospital.latitude,
+            hospitalData.hospital.longitude,
+            donor.latitude,
+            donor.longitude
+          );
+
+        const smsText = `🚨 RAKTSETU – EMERGENCY BLOOD REQUIREMENT
+
+This is an urgent blood donation request received through the RaktSetu Emergency Blood Coordination System.
+
+Hospital: ${hospitalData.hospital.hospitalName}
+Hospital Address: ${hospitalData.hospital.address ||
+          "Hospital address not available"
+          }
+
+Blood Group Required: ${bloodGroup}
+Units Required: ${numericUnits}
+Urgency: ${urgency}
+Approximate Distance: ${distance.toFixed(2)} KM
+
+If you are available and willing to respond to this emergency requirement, please use the link below:
+
+${responseLink}
+
+You may select ACCEPT or DECLINE on the response page.
+
+Your timely response may help support an urgent medical requirement.
+
+— RaktSetu Emergency Blood Services`;
+
+        const smsResult = await sendSMS(
+          donor.phone,
+          smsText,
+          responseLink
+        );
+
+        if (smsResult?.success) {
+          console.log(
+            `✅ Emergency SMS sent to ${donor.phone}`
+          );
+        } else {
+          console.warn(
+            `⚠️ SMS failed for ${donor.phone}:`,
+            smsResult?.error ||
+            "Unknown SMS error"
+          );
+        }
       } catch (smsError) {
         console.warn(
-          `Failed to send SMS to donor:`,
+          `⚠️ Failed to send SMS to donor:`,
           smsError.message
         );
       }
