@@ -10,16 +10,68 @@ const {
   acceptRequest,
   completeRequest,
   getEligibleDonors,
+  getPublicResponse,
+  respondToRequest,
+  getAcceptedDonors,
 } = require("../controllers/requestController");
 
-router.post("/create", authMiddleware, createRequest);
+// ===============================
+// Protected hospital/donor routes
+// ===============================
 
-router.get("/all", authMiddleware, getRequests);
+router.post(
+  "/create",
+  authMiddleware,
+  createRequest
+);
 
-router.put("/accept", authMiddleware, acceptRequest);
+router.get(
+  "/all",
+  authMiddleware,
+  getRequests
+);
 
-router.put("/complete", authMiddleware, completeRequest);
+router.put(
+  "/accept",
+  authMiddleware,
+  acceptRequest
+);
 
-router.get("/eligible/:requestId", authMiddleware, getEligibleDonors);
+router.put(
+  "/complete",
+  authMiddleware,
+  completeRequest
+);
+
+router.get(
+  "/eligible/:requestId",
+  authMiddleware,
+  getEligibleDonors
+);
+
+router.get(
+  "/accepted/:requestId",
+  authMiddleware,
+  getAcceptedDonors
+);
+
+// ===============================
+// Public donor response page
+// ===============================
+// One common link for Accept / Decline
+
+router.get(
+  "/public/:requestId",
+  getPublicResponse
+);
+
+// ===============================
+// Public donor response action
+// ===============================
+
+router.post(
+  "/respond",
+  respondToRequest
+);
 
 module.exports = router;

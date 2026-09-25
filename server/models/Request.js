@@ -40,24 +40,69 @@ const requestSchema = new mongoose.Schema(
     },
 
     status: {
-  type: String,
-  enum: ["Active", "Accepted", "Completed"],
-  default: "Active",
-},
+      type: String,
+      enum: ["Active", "Accepted", "Completed"],
+      default: "Active",
+    },
 
     acceptedDonors: [
-  {
-    name: String,
-    phone: String,
-    acceptedAt: Date,
-  },
-],
+      {
+        responseId: {
+          type: String,
+          required: true,
+        },
 
-      collectedUnits: {
-  type: Number,
-  default: 0,
-},
+        // Kept for compatibility with the existing donor-dashboard flow
+        donor: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Donor",
+        },
 
+        name: String,
+        phone: String,
+        bloodGroup: String,
+
+        acceptedAt: {
+          type: Date,
+          default: Date.now,
+        },
+
+        latitude: Number,
+        longitude: Number,
+
+        locationCapturedAt: Date,
+      },
+    ],
+
+    donorResponses: [
+      {
+        responseId: {
+          type: String,
+          required: true,
+        },
+
+        status: {
+          type: String,
+          enum: ["Accepted", "Declined"],
+          required: true,
+        },
+
+        respondedAt: {
+          type: Date,
+          default: Date.now,
+        },
+
+        latitude: Number,
+        longitude: Number,
+
+        locationCapturedAt: Date,
+      },
+    ],
+
+    collectedUnits: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

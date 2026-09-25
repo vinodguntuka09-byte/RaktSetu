@@ -10,19 +10,27 @@ export default function HospitalDashboard() {
     localStorage.getItem("hospital") || "null"
   );
 
-  const [requests, setRequests] = useState([]);
-  const [eligibleDonors, setEligibleDonors] = useState([]);
-  const [selectedHospital, setSelectedHospital] = useState(null);
-  const [mapLoading, setMapLoading] = useState(false);
+  const [requests, setRequests] =
+    useState([]);
 
-  const [formData, setFormData] = useState({
-    bloodGroup: "A+",
-    units: "",
-    urgency: "Critical",
-    doctorName: "",
-    doctorPhone: "",
-    radius: "",
-  });
+  const [eligibleDonors, setEligibleDonors] =
+    useState([]);
+
+  const [selectedHospital, setSelectedHospital] =
+    useState(null);
+
+  const [mapLoading, setMapLoading] =
+    useState(false);
+
+  const [formData, setFormData] =
+    useState({
+      bloodGroup: "A+",
+      units: "",
+      urgency: "Critical",
+      doctorName: "",
+      doctorPhone: "",
+      radius: "",
+    });
 
   const logout = () => {
     localStorage.clear();
@@ -31,98 +39,198 @@ export default function HospitalDashboard() {
 
   const loadRequests = async () => {
     try {
-      const res = await api.get("/api/requests/all");
-
-      const allRequests = res.data || [];
-
-      // Extra frontend protection:
-      // show only requests belonging to the logged-in hospital
-      const hospitalRequests = allRequests.filter(
-        (item) =>
-          String(item.hospital?._id) === String(hospital?._id)
+      const res = await api.get(
+        "/api/requests/all"
       );
 
-      setRequests(hospitalRequests);
-    } catch (err) {
-      console.error("Error loading hospital requests:", err);
+      const allRequests =
+        res.data || [];
 
-      if (err.response?.status === 401) {
-        alert("Session expired. Please log in again.");
-        localStorage.removeItem("token");
-        localStorage.removeItem("hospital");
-        navigate("/hospital-login");
+      const hospitalRequests =
+        allRequests.filter(
+          (item) =>
+            String(
+              item.hospital?._id
+            ) ===
+            String(hospital?._id)
+        );
+
+      setRequests(
+        hospitalRequests
+      );
+    } catch (err) {
+      console.error(
+        "Error loading hospital requests:",
+        err
+      );
+
+      if (
+        err.response?.status ===
+        401
+      ) {
+        alert(
+          "Session expired. Please log in again."
+        );
+
+        localStorage.removeItem(
+          "token"
+        );
+
+        localStorage.removeItem(
+          "hospital"
+        );
+
+        navigate(
+          "/hospital-login"
+        );
       }
     }
   };
 
   useEffect(() => {
-    if (!hospital || !hospital._id) {
-      navigate("/hospital-login");
+    if (
+      !hospital ||
+      !hospital._id
+    ) {
+      navigate(
+        "/hospital-login"
+      );
       return;
     }
 
     loadRequests();
   }, []);
 
-  const loadEligibleDonors = async (requestId) => {
-    try {
-      setMapLoading(true);
-      setSelectedHospital(null);
-      setEligibleDonors([]);
+  const loadEligibleDonors =
+    async (requestId) => {
+      try {
+        setMapLoading(true);
+        setSelectedHospital(null);
+        setEligibleDonors([]);
 
-      const res = await api.get(
-        `/api/requests/eligible/${requestId}`
+        const res =
+          await api.get(
+            `/api/requests/eligible/${requestId}`
+          );
+
+        setEligibleDonors(
+          res.data.donors || []
+        );
+
+        setSelectedHospital(
+          res.data.hospital
+        );
+      } catch (err) {
+        console.error(
+          "Error loading eligible donors:",
+          err
+        );
+
+        alert(
+          "Failed to load eligible donors"
+        );
+      } finally {
+        setMapLoading(false);
+      }
+    };
+
+  const completeRequest =
+    async (requestId) => {
+      try {
+        await api.put(
+          "/api/requests/complete",
+          {
+            requestId,
+          }
+        );
+
+        alert(
+          "Request Completed ✅"
+        );
+
+        await loadRequests();
+      } catch (err) {
+        console.error(
+          "Error completing request:",
+          err
+        );
+
+        alert(
+          "Failed to Complete Request"
+        );
+      }
+    };
+
+  const viewAcceptedDonors =
+    (requestId) => {
+      navigate(
+        `/accepted-donors/${requestId}`
+      );
+    };
+
+  const openTopAcceptedDonors = () => {
+    const requestWithAcceptedResponse =
+      requests.find(
+        (request) =>
+          Array.isArray(request.acceptedDonors) &&
+          request.acceptedDonors.length > 0
       );
 
-      setEligibleDonors(res.data.donors || []);
-      setSelectedHospital(res.data.hospital);
-    } catch (err) {
-      console.error("Error loading eligible donors:", err);
-      alert("Failed to load eligible donors");
-    } finally {
-      setMapLoading(false);
+    if (!requestWithAcceptedResponse) {
+      alert("No accepted donors yet.");
+      return;
     }
-  };
 
-  const completeRequest = async (requestId) => {
-    try {
-      await api.put("/api/requests/complete", {
-        requestId,
-      });
-
-      alert("Request Completed ✅");
-      await loadRequests();
-    } catch (err) {
-      console.error("Error completing request:", err);
-      alert("Failed to Complete Request");
-    }
+    navigate(
+      `/accepted-donors/${requestWithAcceptedResponse._id}`
+    );
   };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]:
+        e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!hospital || !hospital._id) {
-      alert("Hospital session invalid. Please log in again.");
-      navigate("/hospital-login");
+    if (
+      !hospital ||
+      !hospital._id
+    ) {
+      alert(
+        "Hospital session invalid. Please log in again."
+      );
+
+      navigate(
+        "/hospital-login"
+      );
+
       return;
     }
 
     try {
-      await api.post("/api/requests/create", {
-        hospital: hospital._id,
-        ...formData,
-        units: Number(formData.units),
-        radius: Number(formData.radius),
-      });
+      await api.post(
+        "/api/requests/create",
+        {
+          hospital:
+            hospital._id,
+          ...formData,
+          units: Number(
+            formData.units
+          ),
+          radius: Number(
+            formData.radius
+          ),
+        }
+      );
 
-      alert("Blood Request Created ✅");
+      alert(
+        "Blood Request Created ✅"
+      );
 
       setFormData({
         bloodGroup: "A+",
@@ -137,21 +245,22 @@ export default function HospitalDashboard() {
     } catch (err) {
       console.error(
         "Error creating blood request:",
-        err.response?.data || err
+        err.response?.data ||
+        err
       );
 
       alert(
-        err.response?.data?.message ||
-          "Server Error"
+        err.response?.data
+          ?.message ||
+        "Server Error"
       );
     }
   };
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-red-50 via-white to-gray-100">
-      
       {/* Header */}
-      <div className="w-full bg-red-600 text-white shadow-lg px-10 py-6 flex justify-between items-center">
+      <div className="w-full bg-red-600 text-white shadow-lg px-10 py-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-4xl font-extrabold tracking-wide">
             Welcome{" "}
@@ -165,17 +274,25 @@ export default function HospitalDashboard() {
           </p>
         </div>
 
-        <button
-          onClick={logout}
-          className="bg-white text-red-600 hover:bg-gray-100 font-bold px-6 py-2 rounded-lg transition-all duration-300 ml-10 shadow"
-        >
-          Logout
-        </button>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <button
+            onClick={openTopAcceptedDonors}
+            className="bg-white text-green-600 hover:bg-gray-100 font-bold px-6 py-2 rounded-lg transition-all duration-300 shadow whitespace-nowrap"
+          >
+            ✅ Accepted Donors
+          </button>
+
+          <button
+            onClick={logout}
+            className="bg-white text-red-600 hover:bg-gray-100 font-bold px-6 py-2 rounded-lg transition-all duration-300 shadow whitespace-nowrap"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}
       <div className="w-full px-6 py-8">
-
         {/* Create Request */}
         <div className="w-full bg-white rounded-2xl shadow-xl p-8 mb-8">
           <h2 className="text-3xl font-bold text-gray-800 mb-8">
@@ -194,18 +311,38 @@ export default function HospitalDashboard() {
               <select
                 className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none bg-white"
                 name="bloodGroup"
-                value={formData.bloodGroup}
-                onChange={handleChange}
+                value={
+                  formData.bloodGroup
+                }
+                onChange={
+                  handleChange
+                }
                 required
               >
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
+                <option value="A+">
+                  A+
+                </option>
+                <option value="A-">
+                  A-
+                </option>
+                <option value="B+">
+                  B+
+                </option>
+                <option value="B-">
+                  B-
+                </option>
+                <option value="AB+">
+                  AB+
+                </option>
+                <option value="AB-">
+                  AB-
+                </option>
+                <option value="O+">
+                  O+
+                </option>
+                <option value="O-">
+                  O-
+                </option>
               </select>
             </div>
 
@@ -220,8 +357,12 @@ export default function HospitalDashboard() {
                 placeholder="Number of units"
                 type="number"
                 min="1"
-                value={formData.units}
-                onChange={handleChange}
+                value={
+                  formData.units
+                }
+                onChange={
+                  handleChange
+                }
                 required
               />
             </div>
@@ -234,13 +375,21 @@ export default function HospitalDashboard() {
               <select
                 className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none bg-white"
                 name="urgency"
-                value={formData.urgency}
-                onChange={handleChange}
+                value={
+                  formData.urgency
+                }
+                onChange={
+                  handleChange
+                }
               >
-                <option value="Critical">Critical</option>
+                <option value="Critical">
+                  Critical
+                </option>
+
                 <option value="Within 24 hrs">
                   Within 24 hrs
                 </option>
+
                 <option value="Within a week">
                   Within a week
                 </option>
@@ -256,8 +405,12 @@ export default function HospitalDashboard() {
                 className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
                 name="doctorName"
                 placeholder="Doctor Name"
-                value={formData.doctorName}
-                onChange={handleChange}
+                value={
+                  formData.doctorName
+                }
+                onChange={
+                  handleChange
+                }
                 required
               />
             </div>
@@ -271,8 +424,12 @@ export default function HospitalDashboard() {
                 className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
                 name="doctorPhone"
                 placeholder="Doctor Phone Number"
-                value={formData.doctorPhone}
-                onChange={handleChange}
+                value={
+                  formData.doctorPhone
+                }
+                onChange={
+                  handleChange
+                }
                 required
               />
             </div>
@@ -288,8 +445,12 @@ export default function HospitalDashboard() {
                 placeholder="Search radius in kilometers"
                 type="number"
                 min="1"
-                value={formData.radius}
-                onChange={handleChange}
+                value={
+                  formData.radius
+                }
+                onChange={
+                  handleChange
+                }
                 required
               />
             </div>
@@ -313,120 +474,201 @@ export default function HospitalDashboard() {
             <table className="w-full border-collapse rounded-xl overflow-hidden">
               <thead>
                 <tr className="bg-red-600 text-white text-left">
-                  <th className="py-3 px-4">Hospital</th>
-                  <th className="py-3 px-4">Blood</th>
-                  <th className="py-3 px-4">Units</th>
-                  <th className="py-3 px-4">Urgency</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Collected</th>
-                  <th className="py-3 px-4">Accepted Donors</th>
-                  <th className="py-3 px-4">Eligible Donors</th>
+                  <th className="py-3 px-4">
+                    Hospital
+                  </th>
+
+                  <th className="py-3 px-4">
+                    Blood
+                  </th>
+
+                  <th className="py-3 px-4">
+                    Units
+                  </th>
+
+                  <th className="py-3 px-4">
+                    Urgency
+                  </th>
+
+                  <th className="py-3 px-4">
+                    Status
+                  </th>
+
+                  <th className="py-3 px-4">
+                    Collected
+                  </th>
+
+                  <th className="py-3 px-4">
+                    Accepted Donors
+                  </th>
+
+                  <th className="py-3 px-4">
+                    Eligible Donors
+                  </th>
                 </tr>
               </thead>
 
               <tbody>
-                {requests.length === 0 ? (
+                {requests.length ===
+                  0 ? (
                   <tr>
                     <td
                       colSpan="8"
                       className="text-center py-6 text-gray-500"
                     >
-                      No blood requests found. Create one above!
+                      No blood requests found.
+                      Create one above!
                     </td>
                   </tr>
                 ) : (
-                  requests.map((req) => (
-                    <tr
-                      key={req._id}
-                      className="border-b hover:bg-red-50 transition"
-                    >
-                      <td className="py-3 px-4 font-semibold text-gray-800">
-                        {req.hospital?.hospitalName}
-                      </td>
+                  requests.map(
+                    (req) => (
+                      <tr
+                        key={req._id}
+                        className="border-b hover:bg-red-50 transition"
+                      >
+                        <td className="py-3 px-4 font-semibold text-gray-800">
+                          {
+                            req.hospital
+                              ?.hospitalName
+                          }
+                        </td>
 
-                      <td className="py-3 px-4 font-bold text-red-600">
-                        {req.bloodGroup}
-                      </td>
+                        <td className="py-3 px-4 font-bold text-red-600">
+                          {
+                            req.bloodGroup
+                          }
+                        </td>
 
-                      <td className="py-3 px-4">
-                        {req.units}
-                      </td>
+                        <td className="py-3 px-4">
+                          {req.units}
+                        </td>
 
-                      <td className="py-3 px-4">
-                        {req.urgency}
-                      </td>
+                        <td className="py-3 px-4">
+                          {req.urgency}
+                        </td>
 
-                      <td className="py-3 px-4">
-                        {req.status === "Active" && (
-                          <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">
-                            Active
-                          </span>
-                        )}
+                        <td className="py-3 px-4">
+                          {req.status ===
+                            "Active" && (
+                              <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                Active
+                              </span>
+                            )}
 
-                        {req.status === "Accepted" && (
-                          <div className="flex flex-col items-start gap-1">
-                            <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
-                              Accepted
-                            </span>
+                          {req.status ===
+                            "Accepted" && (
+                              <div className="flex flex-col items-start gap-1">
+                                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                  Accepted
+                                </span>
 
+                                <button
+                                  onClick={() =>
+                                    completeRequest(
+                                      req._id
+                                    )
+                                  }
+                                  className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700"
+                                >
+                                  Complete
+                                </button>
+                              </div>
+                            )}
+
+                          {req.status ===
+                            "Completed" && (
+                              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                Completed
+                              </span>
+                            )}
+                        </td>
+
+                        <td className="py-3 px-4">
+                          {req.collectedUnits}{" "}
+                          /{" "}
+                          {req.units}
+                        </td>
+
+                        {/* ACCEPTED RESPONSES */}
+                        <td className="py-3 px-4">
+                          <div className="flex flex-col gap-2">
+                            {!req.acceptedDonors ||
+                              req.acceptedDonors
+                                .length ===
+                              0 ? (
+                              <p className="text-gray-500 text-sm">
+                                No
+                                responses
+                                yet
+                              </p>
+                            ) : (
+                              req.acceptedDonors.map(
+                                (
+                                  donor,
+                                  index
+                                ) => (
+                                  <div
+                                    key={
+                                      donor.responseId ||
+                                      index
+                                    }
+                                    className="text-xs"
+                                  >
+                                    <p className="font-semibold text-green-700">
+                                      ✅ Accepted
+                                      Response
+                                      #
+                                      {index +
+                                        1}
+                                    </p>
+
+                                    {donor.latitude !=
+                                      null &&
+                                      donor.longitude !=
+                                      null && (
+                                        <p className="text-green-600 mt-1">
+                                          📍
+                                          Location
+                                          received
+                                        </p>
+                                      )}
+                                  </div>
+                                )
+                              )
+                            )}
+
+                            {/* Always available */}
                             <button
+                              type="button"
                               onClick={() =>
-                                completeRequest(req._id)
+                                viewAcceptedDonors(
+                                  req._id
+                                )
                               }
-                              className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700"
+                              className="mt-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-xs font-semibold"
                             >
-                              Complete
+                              🚑 Monitor Accepted Donors
                             </button>
                           </div>
-                        )}
+                        </td>
 
-                        {req.status === "Completed" && (
-                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">
-                            Completed
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-3 px-4">
-                        {req.collectedUnits} / {req.units}
-                      </td>
-
-                      <td className="py-3 px-4">
-                        {!req.acceptedDonors ||
-                        req.acceptedDonors.length === 0 ? (
-                          "-"
-                        ) : (
-                          req.acceptedDonors.map(
-                            (donor, index) => (
-                              <div
-                                key={index}
-                                className="text-xs mb-1"
-                              >
-                                <p className="font-semibold text-gray-800">
-                                  ✅ {donor.name}
-                                </p>
-
-                                <p className="text-gray-500">
-                                  📞 {donor.phone}
-                                </p>
-                              </div>
-                            )
-                          )
-                        )}
-                      </td>
-
-                      <td className="py-3 px-4">
-                        <button
-                          onClick={() =>
-                            loadEligibleDonors(req._id)
-                          }
-                          className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-semibold text-sm transition"
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                        {/* ELIGIBLE DONORS */}
+                        <td className="py-3 px-4">
+                          <button
+                            onClick={() =>
+                              loadEligibleDonors(
+                                req._id
+                              )
+                            }
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-semibold text-sm transition"
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  )
                 )}
               </tbody>
             </table>
@@ -439,76 +681,117 @@ export default function HospitalDashboard() {
                 <div className="animate-spin rounded-full h-10 w-10 border-4 border-red-600 border-t-transparent"></div>
 
                 <span className="ml-3 text-gray-600 font-medium">
-                  Loading donors & map...
+                  Loading donors &
+                  map...
                 </span>
               </div>
             ) : !selectedHospital ? (
               <p className="text-gray-500 text-sm">
-                Click "View" on any request to load eligible donors and map.
+                Click "View" on any request
+                to load eligible donors
+                and map.
               </p>
             ) : (
               <>
-                {eligibleDonors.length === 0 ? (
+                {eligibleDonors.length ===
+                  0 ? (
                   <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-xl px-5 py-4 mb-6 text-sm font-medium">
-                    ⚠️ No eligible donors found in the search radius for this request.
+                    ⚠️ No eligible donors
+                    found in the search
+                    radius for this
+                    request.
                   </div>
                 ) : (
                   <>
                     <h3 className="text-xl font-bold mb-4 text-gray-800">
-                      Found {eligibleDonors.length} Eligible Donor(s)
+                      Found{" "}
+                      {
+                        eligibleDonors.length
+                      }{" "}
+                      Eligible Donor(s)
                     </h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                      {eligibleDonors.map((donor) => (
-                        <div
-                          key={donor._id}
-                          className="bg-white rounded-2xl shadow border border-red-100 p-6 hover:shadow-lg transition"
-                        >
-                          <h3 className="text-xl font-bold text-red-600">
-                            {donor.name}
-                          </h3>
+                      {eligibleDonors.map(
+                        (donor) => (
+                          <div
+                            key={
+                              donor._id
+                            }
+                            className="bg-white rounded-2xl shadow border border-red-100 p-6 hover:shadow-lg transition"
+                          >
+                            <h3 className="text-xl font-bold text-red-600">
+                              {
+                                donor.name
+                              }
+                            </h3>
 
                             <p className="text-gray-700 mt-1">
-                            📍 Distance from Hospital:{" "}
-                            <strong>{donor.distance} KM</strong>
+                              📍 Distance from
+                              Hospital:{" "}
+                              <strong>
+                                {
+                                  donor.distance
+                                }{" "}
+                                KM
+                              </strong>
                             </p>
 
-                          <p className="text-gray-700">
-                            📞 {donor.phone}
-                          </p>
+                            <p className="text-gray-700">
+                              📞{" "}
+                              {
+                                donor.phone
+                              }
+                            </p>
 
-                          <p className="text-gray-700">
-                            🩸{" "}
-                            <strong>
-                              {donor.bloodGroup}
-                            </strong>
-                          </p>
+                            <p className="text-gray-700">
+                              🩸{" "}
+                              <strong>
+                                {
+                                  donor.bloodGroup
+                                }
+                              </strong>
+                            </p>
 
-                          <p className="text-gray-700">
-                            🏙️ {donor.city}
-                          </p>
+                            <p className="text-gray-700">
+                              🏙️{" "}
+                              {donor.city}
+                            </p>
 
-                          <p className="text-gray-700">
-                            🎂 {donor.age} Years
-                          </p>
+                            <p className="text-gray-700">
+                              🎂{" "}
+                              {donor.age}{" "}
+                              Years
+                            </p>
 
-                          <p className="text-gray-700">
-                            ⚖️ {donor.weight} KG
-                          </p>
-                        </div>
-                      ))}
+                            <p className="text-gray-700">
+                              ⚖️{" "}
+                              {
+                                donor.weight
+                              }{" "}
+                              KG
+                            </p>
+                          </div>
+                        )
+                      )}
                     </div>
                   </>
                 )}
 
                 <div className="mt-4">
                   <h2 className="text-2xl font-bold mb-5 text-gray-800">
-                    🗺️ Hospital & Donor Locations Map
+                    🗺️ Hospital &
+                    Donor Locations
+                    Map
                   </h2>
 
                   <Map
-                    hospital={selectedHospital}
-                    donors={eligibleDonors}
+                    hospital={
+                      selectedHospital
+                    }
+                    donors={
+                      eligibleDonors
+                    }
                   />
                 </div>
               </>
