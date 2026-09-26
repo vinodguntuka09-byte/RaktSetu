@@ -148,25 +148,20 @@ const createRequest = async (req, res) => {
           donor.longitude
         );
 
-      const emailText = `🚨 RAKTSETU – EMERGENCY BLOOD REQUIREMENT
-
-This is an urgent blood donation request received through the RaktSetu Emergency Blood Coordination System.
+      const emailText = `An urgent blood requirement has been reported.
 
 Hospital: ${hospitalData.hospital.hospitalName}
-Hospital Address: ${hospitalData.hospital.address || "Hospital address not available"}
+Address: ${hospitalData.hospital.address ||
+        "Hospital address not available"
+        }
 
-Blood Group Required: ${bloodGroup}
+Blood Group: ${bloodGroup}
 Units Required: ${numericUnits}
 Urgency: ${urgency}
-Approximate Distance: ${distance.toFixed(2)} KM
 
-If you are available and willing to respond to this emergency requirement, please use the link below:
+If you are willing to donate, please respond using the button below.
 
-${responseLink}
-
-You may select ACCEPT or DECLINE on the response page.
-
-Your timely response may help support an urgent medical requirement.
+After accepting, your current location will be requested so the hospital can coordinate with you. An ambulance will come to pick you up with necessary safety precautions.
 
 — RaktSetu Emergency Blood Services`;
 
@@ -203,39 +198,31 @@ Your timely response may help support an urgent medical requirement.
     // Existing SMS system stays untouched
     // ========================================
 
+    // ========================================
+    // SMS NOTIFICATIONS
+    // SHORT ENGLISH SMS - ONE SMS PART
+    // ========================================
+
     for (const donor of eligibleDonors) {
       try {
-        const distance =
-          calculateDistance(
-            hospitalData.hospital.latitude,
-            hospitalData.hospital.longitude,
-            donor.latitude,
-            donor.longitude
-          );
+        const hospitalName = String(
+          hospitalData.hospital.hospitalName ||
+          "Hospital"
+        )
+          .replace(/[^\x00-\x7F]/g, "")
+          .trim()
+          .slice(0, 25);
 
-        const smsText = `🚨 RAKTSETU – EMERGENCY BLOOD REQUIREMENT
+        let shortUrgency = "Critical";
 
-This is an urgent blood donation request received through the RaktSetu Emergency Blood Coordination System.
+        if (urgency === "Within 24 hrs") {
+          shortUrgency = "24hr";
+        } else if (urgency === "Within a week") {
+          shortUrgency = "1wk";
+        }
 
-Hospital: ${hospitalData.hospital.hospitalName}
-Hospital Address: ${hospitalData.hospital.address ||
-          "Hospital address not available"
-          }
-
-Blood Group Required: ${bloodGroup}
-Units Required: ${numericUnits}
-Urgency: ${urgency}
-Approximate Distance: ${distance.toFixed(2)} KM
-
-If you are available and willing to respond to this emergency requirement, please use the link below:
-
-${responseLink}
-
-You may select ACCEPT or DECLINE on the response page.
-
-Your timely response may help support an urgent medical requirement.
-
-— RaktSetu Emergency Blood Services`;
+        const smsText =
+          `RAKTSETU: ${hospitalName}, ${bloodGroup} blood, ${numericUnits} units, ${shortUrgency}. Accept:`;
 
         const smsResult = await sendSMS(
           donor.phone,

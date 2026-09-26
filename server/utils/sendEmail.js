@@ -104,17 +104,36 @@ const sendEmail = async (
     }
 
     // ========================================
-    // SAFE HTML TEXT
+    // REMOVE RAW RESPONSE LINK
+    // FROM EMAIL BODY
+    // ========================================
+
+    let visibleText = String(text || "");
+
+    if (responseLink) {
+      visibleText = visibleText
+        .split(responseLink)
+        .join("")
+        .trim();
+    }
+
+    // ========================================
+    // HTML SAFE CONTENT
     // ========================================
 
     const safeText =
-      escapeHtml(text).replace(
+      escapeHtml(visibleText).replace(
         /\n/g,
         "<br>"
       );
 
+    const safeResponseLink =
+      responseLink
+        ? escapeHtml(responseLink)
+        : null;
+
     // ========================================
-    // PROFESSIONAL EMAIL TEMPLATE
+    // EMAIL TEMPLATE
     // ========================================
 
     const html = `
@@ -158,7 +177,7 @@ const sendEmail = async (
             ${safeText}
           </div>
 
-          ${responseLink
+          ${safeResponseLink
         ? `
                 <div
                   style="
@@ -167,7 +186,7 @@ const sendEmail = async (
                   "
                 >
                   <a
-                    href="${responseLink}"
+                    href="${safeResponseLink}"
                     style="
                       display: inline-block;
                       background-color: #dc2626;
@@ -200,7 +219,7 @@ const sendEmail = async (
         from: `"RaktSetu" <${sender}>`,
         to: recipients,
         subject,
-        text,
+        text: visibleText,
         html,
       });
 

@@ -10,7 +10,7 @@ const sendSMS = async (
     // CHECK API KEY
     // ========================================
 
-    if (!apiKey) {
+    if (!apiKey || !apiKey.trim()) {
       console.warn(
         "⚠️ FAST2SMS_API_KEY is missing"
       );
@@ -40,7 +40,7 @@ const sendSMS = async (
     // CHECK MESSAGE
     // ========================================
 
-    if (!message) {
+    if (!message || !String(message).trim()) {
       console.warn(
         "⚠️ No SMS message provided"
       );
@@ -52,7 +52,7 @@ const sendSMS = async (
     }
 
     // ========================================
-    // ACCEPT SINGLE OR MULTIPLE NUMBERS
+    // RECIPIENTS
     // ========================================
 
     const recipients = Array.isArray(to)
@@ -64,8 +64,8 @@ const sendSMS = async (
         String(number).replace(/\D/g, "")
       )
       .map((number) => {
-        // Convert +91XXXXXXXXXX or 91XXXXXXXXXX
-        // into 10-digit Indian mobile number
+        // Convert +91XXXXXXXXXX / 91XXXXXXXXXX
+        // to 10-digit Indian mobile number
         if (
           number.length === 12 &&
           number.startsWith("91")
@@ -92,37 +92,72 @@ const sendSMS = async (
     }
 
     // ========================================
-    // FINAL SMS MESSAGE
+    // PREPARE SMS MESSAGE
+    // ========================================
+    // Keep SMS in plain English/ASCII so that
+    // Unicode characters do not increase SMS parts.
+
+    let finalMessage = String(message)
+      .replace(/[^\x00-\x7F]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // ========================================
+    // ADD ONE RESPONSE LINK
     // ========================================
 
-    let finalMessage = String(message).trim();
-
-    // Add response link if provided separately
-    // and it is not already present in the message.
     if (
       responseLink &&
       !finalMessage.includes(responseLink)
     ) {
-      finalMessage += `\n\nResponse Link:\n${responseLink}`;
+      finalMessage =
+        `${finalMessage} ${responseLink}`.trim();
     }
 
     // ========================================
-    // FAST2SMS URL
+    // ONE-SMS SAFETY CHECK
+    // ========================================
+    // Quick SMS:
+    // Maximum 160 ASCII characters for one part.
+
+    const characterCount =
+      finalMessage.length;
+
+    if (characterCount > 160) {
+      console.warn(
+        `⚠️ SMS not sent: ${characterCount} characters exceeds the 160-character limit.`
+      );
+
+      return {
+        success: false,
+        error:
+          `SMS message exceeds 160 characters (${characterCount}).`,
+      };
+    }
+
+    // ========================================
+    // FAST2SMS API
     // ========================================
 
     const url = new URL(
       "https://www.fast2sms.com/dev/bulkV2"
     );
 
-    url.searchParams.set("route", "q");
+    url.searchParams.set(
+      "route",
+      "q"
+    );
+
     url.searchParams.set(
       "message",
       finalMessage
     );
+
     url.searchParams.set(
       "numbers",
       numbers.join(",")
     );
+
     url.searchParams.set(
       "sms_details",
       "1"
@@ -137,16 +172,17 @@ const sendSMS = async (
       {
         method: "GET",
         headers: {
-          Authorization: apiKey,
+          Authorization: apiKey.trim(),
           accept: "application/json",
         },
       }
     );
 
-    const data = await response.json();
+    const data =
+      await response.json();
 
     // ========================================
-    // HANDLE HTTP ERROR
+    // HTTP ERROR
     // ========================================
 
     if (!response.ok) {
@@ -157,7 +193,7 @@ const sendSMS = async (
     }
 
     // ========================================
-    // HANDLE FAST2SMS ERROR
+    // FAST2SMS ERROR
     // ========================================
 
     if (data?.return === false) {
@@ -175,6 +211,10 @@ const sendSMS = async (
       `✅ SMS sent successfully to: ${numbers.join(
         ", "
       )}`
+    );
+
+    console.log(
+      `📏 SMS Character Count: ${characterCount}/160`
     );
 
     console.log(
